@@ -7,11 +7,13 @@ export function getActiveEnergyParams(params: SolarParams) {
   let rateProfile = Array(12).fill(rate);
 
   if (params.usageMode === 'historical' && params.historicalBills && params.historicalBills.length > 0) {
-    const bills = params.historicalBills;
-    const sortedBills = [...bills].sort((a, b) => b.monthString.localeCompare(a.monthString));
-    const mostRecent = sortedBills[0];
+    const bills = params.historicalBills.filter(b => b.actualUsageKwh > 0 || b.billAmount > 0);
     
-    if (params.historicalCompMode === 'recent') {
+    if (bills.length > 0) {
+      const sortedBills = [...bills].sort((a, b) => b.monthString.localeCompare(a.monthString));
+      const mostRecent = sortedBills[0];
+      
+      if (params.historicalCompMode === 'recent') {
       rate = mostRecent.actualUsageKwh > 0 ? mostRecent.billAmount / mostRecent.actualUsageKwh : params.utilityRate;
       flatUsage = mostRecent.actualUsageKwh;
       
@@ -78,6 +80,7 @@ export function getActiveEnergyParams(params: SolarParams) {
           rateProfile = Array(12).fill(yearlyRate);
         }
       }
+    }
     }
   }
 
@@ -188,14 +191,16 @@ export function calculateRoi(params: SolarParams): RoiResults {
       const gridBuying = dailyNightUsage - batteryDischarge;
       
       const monthSolarConsumed = (directSolarUsage + batteryDischarge) * daysInMonth[m];
+      const gridRenewablePct = params.gridRenewablePercentage || 0;
       const monthGridPurchased = gridBuying * daysInMonth[m];
-      const monthGridRenewable = monthGridPurchased * (params.gridRenewablePercentage / 100);
+      const monthGridRenewable = monthGridPurchased * (gridRenewablePct / 100);
       const monthGridNonRenewable = monthGridPurchased - monthGridRenewable;
 
       if (yearIndex === 1) {
-        const mixSolar = Math.min(monthlyGen, monthUsage);
-        const mixGrid = Math.max(0, monthUsage - mixSolar);
-        const mixGridRenewable = mixGrid * (params.gridRenewablePercentage / 100);
+        const gridRenewablePct = params.gridRenewablePercentage || 0;
+        const mixSolar = Math.min(monthlyGen || 0, monthUsage || 0);
+        const mixGrid = Math.max(0, (monthUsage || 0) - mixSolar);
+        const mixGridRenewable = mixGrid * (gridRenewablePct / 100);
         const mixGridNonRenewable = mixGrid - mixGridRenewable;
 
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -421,7 +426,7 @@ export function calculateRoi(params: SolarParams): RoiResults {
 
   const cellPhoneCharges = B > 0 ? Math.floor(B / 0.015) : 0; // 1 phone = 15Wh
 
-  const currentRenewableKwh = annualUsage * (params.gridRenewablePercentage / 100);
+  const currentRenewableKwh = annualUsage * ((params.gridRenewablePercentage || 0) / 100);
   
   let totalNetSolarConsumed = 0;
   let totalNetGridRenewable = 0;
@@ -431,7 +436,7 @@ export function calculateRoi(params: SolarParams): RoiResults {
   }
   
   const newRenewableKwh = totalNetSolarConsumed + totalNetGridRenewable;
-  const newRenewablePercent = annualUsage > 0 ? (newRenewableKwh / annualUsage) * 100 : params.gridRenewablePercentage;
+  const newRenewablePercent = annualUsage > 0 ? (newRenewableKwh / annualUsage) * 100 : (params.gridRenewablePercentage || 0);
   
   const oldNonRenewableKwh = annualUsage - currentRenewableKwh;
   const newNonRenewableKwh = annualUsage - newRenewableKwh;
@@ -459,7 +464,7 @@ export function calculateRoi(params: SolarParams): RoiResults {
       cellPhoneCharges
     },
     co2Impact: {
-      currentRenewablePercent: params.gridRenewablePercentage,
+      currentRenewablePercent: params.gridRenewablePercentage || 0,
       newRenewablePercent,
       co2SavedTonsPerYear
     },

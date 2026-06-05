@@ -70,7 +70,12 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
           {(metric === 'profit' || metric === 'both') && (
             <YAxis 
               yAxisId="profit"
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} 
+              tickFormatter={(value) => {
+                if (typeof value !== 'number') return `${value}`;
+                if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
+                if (value >= 1000) return `$${Math.round(value / 1000)}k`;
+                return `$${value}`;
+              }}
               stroke="#10b981"
               tickLine={false}
               axisLine={false}

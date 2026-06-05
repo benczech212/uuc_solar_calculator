@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SolarParams } from '../types';
 import { calculateRoi, formatCurrency } from '../utils';
 import { Plus, Trash2, LineChart, Target, AlertCircle, Sun } from 'lucide-react';
@@ -14,7 +14,54 @@ interface ProgressTrackerProps {
 export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressTrackerProps) {
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
   
-  const entries = params.historicalBills || [];
+  const entries = [...(params.historicalBills || [])].sort((a, b) => b.monthString.localeCompare(a.monthString));
+
+  useEffect(() => {
+    if (!entries || entries.length === 0) return;
+    
+    const sorted = [...entries].sort((a, b) => b.monthString.localeCompare(a.monthString));
+    const latestEntry = sorted[0];
+    const latestMonthStr = latestEntry.monthString;
+    
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (latestMonthStr < currentMonthStr) {
+      const newEntries = [...entries];
+      let [year, month] = latestMonthStr.split('-').map(Number);
+      
+      let added = false;
+      let failsafe = 0;
+      while (failsafe < 100) { // arbitrary limit to prevent infinite loops
+        failsafe++;
+        month++;
+        if (month > 12) {
+          month = 1;
+          year++;
+        }
+        
+        const nextMonthStr = `${year}-${String(month).padStart(2, '0')}`;
+        // Dont add if it already exists in case of weird manual gaps
+        if (!newEntries.find(e => e.monthString === nextMonthStr)) {
+          newEntries.push({
+            id: `auto-${nextMonthStr}`,
+            monthString: nextMonthStr,
+            billAmount: 0,
+            actualUsageKwh: 0,
+          });
+          added = true;
+        }
+        
+        if (nextMonthStr >= currentMonthStr) {
+          break;
+        }
+      }
+      
+      if (added) {
+        updateParam('historicalBills', newEntries.sort((a, b) => a.monthString.localeCompare(b.monthString)));
+      }
+    }
+  }, [entries, updateParam]);
 
   const addEntry = () => {
     const d = new Date();
@@ -63,7 +110,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
   // Filter for post-solar bills for ROI tracking
   const postSolarEntries = useMemo(() => {
     if (!params.solarSwitchDate) return [];
-    return entries.filter(e => e.monthString >= params.solarSwitchDate!);
+    return entries.filter(e => e.monthString >= params.solarSwitchDate! && (e.actualUsageKwh > 0 || e.billAmount > 0));
   }, [entries, params.solarSwitchDate]);
 
   const projectedAvgMonthlyBill = Math.max(0, (baselineAnnualCost - results.yearOneSavings) / 12);
@@ -74,8 +121,12 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
   
   const projected25YearSavings = results.total25YearSavings;
   const new25YearSavings = adjustedAnnualSavings > 0 ? (adjustedAnnualSavings * 25) - results.netCost : -results.netCost;
+  const newRoiPercentage = results.netCost > 0 ? (new25YearSavings / results.netCost) * 100 : 0;
 
-  const chartData = entries.map(e => {
+  const chartData = [...entries]
+    .filter(e => e.actualUsageKwh > 0 || e.billAmount > 0)
+    .sort((a, b) => a.monthString.localeCompare(b.monthString))
+    .map(e => {
     const isPostSolar = params.solarSwitchDate ? e.monthString >= params.solarSwitchDate : false;
     let targetBill = projectedAvgMonthlyBill;
     
@@ -165,7 +216,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
         </div>
 
         {postSolarEntries.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8 mt-6">
             <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-sky-500" />
@@ -206,26 +257,38 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
               </p>
               <p className="text-xs text-purple-500/70 mt-1">vs {formatCurrency(projected25YearSavings)} mod</p>
             </div>
+            <div className="bg-slate-900/60 p-4 rounded-xl border border-indigo-900/50">
+              <p className="text-[10px] uppercase text-indigo-500 tracking-wider mb-1">Adj. 25yr ROI</p>
+              <p className="text-2xl font-mono text-indigo-400">
+                {newRoiPercentage > 0 ? `+${newRoiPercentage.toFixed(1)}%` : `${newRoiPercentage.toFixed(1)}%`}
+              </p>
+              <p className="text-xs text-indigo-500/70 mt-1">vs +{results.roiPercentage.toFixed(1)}% mod</p>
+            </div>
           </div>
         )}
 
         {entries.length > 0 && (
-          <div className="w-full h-72 mb-8 bg-slate-950/40 border border-slate-800 p-4 rounded-xl font-mono text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                <XAxis dataKey="month" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
-                  itemStyle={{ fontFamily: 'monospace' }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Legend iconType="circle" />
-                <Bar yAxisId="left" dataKey="ActualBill" name="Actual Bill ($)" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                <Line yAxisId="left" type="step" dataKey="TargetBill" name="Model Target ($)" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-              </ComposedChart>
-            </ResponsiveContainer>
+          <div className="w-full mb-8 bg-slate-950/40 border border-slate-800 p-4 rounded-xl">
+            <div className="mb-4 text-xs text-slate-400 max-w-3xl">
+              <span className="text-amber-500 font-medium">Model Target ($):</span> This line represents the expectation set by your solar projection model. Before the solar switch date, it shows what the model computed your bill should have been based on your baseline utility rate and profile. After solar, it shows the projected average post-solar bill. Compare your actual bills against this line to track accuracy.
+            </div>
+            <div className="w-full h-72 font-mono text-xs">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis dataKey="month" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} />
+                  <YAxis yAxisId="left" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
+                    itemStyle={{ fontFamily: 'monospace' }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar yAxisId="left" dataKey="ActualBill" name="Actual Bill ($)" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Line yAxisId="left" type="step" dataKey="TargetBill" name="Model Target ($)" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -238,47 +301,115 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
           
           {entries.map((e) => {
             const isPostSolar = params.solarSwitchDate ? e.monthString >= params.solarSwitchDate : false;
+            
+            let projectedGen = 0;
+            let efficiency = 0;
+            let currentMonthRate = activeRate;
+            const mMatch = e.monthString.match(/-(\d{2})$/);
+            if (mMatch) {
+              const mIdx = parseInt(mMatch[1], 10) - 1;
+              if (mIdx >= 0 && mIdx < 12) {
+                 projectedGen = results.monthlyEnergyData[mIdx]?.generation || 0;
+                 currentMonthRate = activeRateProfile[mIdx];
+              }
+            }
+            
+            if (e.solarGeneratedKwh && projectedGen > 0) {
+              efficiency = (e.solarGeneratedKwh / projectedGen) * 100;
+            }
+            
+            const solarGen = e.solarGeneratedKwh || 0;
+            const gridExp = e.gridExportedKwh || 0;
+            const solarConsumed = Math.max(0, solarGen - gridExp);
+            const solarValue = (solarConsumed * currentMonthRate) + (gridExp * params.sellBackRate);
+
             return (
-              <div key={e.id} className={`bg-slate-900 border ${isPostSolar ? 'border-amber-900/40' : 'border-slate-800'} p-4 rounded-xl flex flex-col sm:flex-row gap-4 items-center`}>
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                  <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Billing Month (YYYY-MM)</label>
-                    <input
-                      type="month"
-                      value={e.monthString}
-                      onChange={(evt) => updateEntry(e.id, { monthString: evt.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Actual Bill Amount ($)</label>
-                     <input
-                        type="number"
-                        value={e.billAmount}
-                        onChange={(evt) => updateEntry(e.id, { billAmount: Number(evt.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-emerald-500"
+              <div key={e.id} className={`bg-slate-900 border ${isPostSolar ? 'border-amber-900/40' : 'border-slate-800'} p-4 rounded-xl flex flex-col gap-4`}>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
+                    <div>
+                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Billing Month (YYYY-MM)</label>
+                      <input
+                        type="month"
+                        value={e.monthString}
+                        onChange={(evt) => updateEntry(e.id, { monthString: evt.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
                       />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Actual Bill Amount ($)</label>
+                       <input
+                          type="number"
+                          value={e.billAmount}
+                          onChange={(evt) => updateEntry(e.id, { billAmount: Number(evt.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-emerald-500"
+                        />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Usage (kWh)</label>
+                       <input
+                          type="number"
+                          value={e.actualUsageKwh}
+                          onChange={(evt) => updateEntry(e.id, { actualUsageKwh: Number(evt.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-emerald-500"
+                        />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Computed Rate ($/kWh)</label>
+                      <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-400 text-right font-mono h-[38px] flex items-center justify-end">
+                        {e.actualUsageKwh > 0 ? (e.billAmount / e.actualUsageKwh).toFixed(4) : "0.0000"}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Usage (kWh)</label>
-                     <input
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-950/50 rounded-lg text-xs font-mono text-slate-400 w-full sm:w-auto shrink-0 justify-between sm:justify-start h-[38px] mt-5">
+                     <span className={isPostSolar ? 'text-amber-500' : ''}>{isPostSolar ? 'Post-Solar' : 'Pre-Solar'}</span>
+                  </div>
+                  <button 
+                    onClick={() => removeEntry(e.id)}
+                    className="text-slate-500 hover:text-rose-400 p-2 shrink-0 transition-colors mt-5"
+                    title="Remove Entry"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {isPostSolar && (
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full pt-4 border-t border-amber-900/20">
+                    <div>
+                      <label className="text-[10px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Solar Gen (kWh)</label>
+                      <input
                         type="number"
-                        value={e.actualUsageKwh}
-                        onChange={(evt) => updateEntry(e.id, { actualUsageKwh: Number(evt.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-emerald-500"
+                        placeholder={projectedGen > 0 ? projectedGen.toFixed(0) : '0'}
+                        value={e.solarGeneratedKwh || ''}
+                        onChange={(evt) => updateEntry(e.id, { solarGeneratedKwh: Number(evt.target.value) })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-amber-500 placeholder:text-slate-700 mt-2"
                       />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Exported (kWh)</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={e.gridExportedKwh || ''}
+                        onChange={(evt) => updateEntry(e.id, { gridExportedKwh: Number(evt.target.value) })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white text-right font-mono focus:outline-none focus:border-amber-500 placeholder:text-slate-700 mt-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-emerald-500 tracking-wider mb-1 block border-b border-emerald-900/30 pb-1">Solar Value ($)</label>
+                      <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 text-right font-mono h-[38px] flex items-center justify-end mt-2">
+                        {solarValue > 0 ? formatCurrency(solarValue) : "$0"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase text-sky-500 tracking-wider mb-1 block border-b border-sky-900/30 pb-1">Gen Efficiency</label>
+                      <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-sky-400 text-right font-mono h-[38px] flex items-center justify-end mt-2">
+                        {efficiency > 0 ? `${efficiency.toFixed(1)}%` : "---"}
+                      </div>
+                      <p className="text-[9px] text-slate-500 text-right mt-1">vs {projectedGen.toFixed(0)} kWh mod</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-950/50 rounded-lg text-xs font-mono text-slate-400 w-full sm:w-auto shrink-0 justify-between">
-                   <span>{isPostSolar ? 'Post-Solar' : 'Pre-Solar'}</span>
-                </div>
-                <button 
-                  onClick={() => removeEntry(e.id)}
-                  className="text-slate-500 hover:text-rose-400 p-2 shrink-0 transition-colors"
-                  title="Remove Entry"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                )}
               </div>
             );
           })}

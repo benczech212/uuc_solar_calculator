@@ -20,7 +20,14 @@ export interface SolarParams {
   monthlyUsageKwh: number;
   monthlyUsageProfile: number[];
   
-  historicalBills?: { id: string; monthString: string; billAmount: number; actualUsageKwh: number; }[];
+  historicalBills?: { 
+    id: string; 
+    monthString: string; 
+    billAmount: number; 
+    actualUsageKwh: number;
+    solarGeneratedKwh?: number;
+    gridExportedKwh?: number;
+  }[];
   historicalCompMode?: 'average' | 'recent';
   historicalByMonth?: boolean;
   solarSwitchDate?: string;
