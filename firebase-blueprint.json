@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "SavedConfig": {
+      "title": "Saved Configuration",
+      "description": "A saved solar system configuration.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique ID of the saved configuration"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth ID of the user who saved it"
+        },
+        "title": {
+          "type": "string",
+          "description": "User-provided title for the configuration"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description for the configuration"
+        },
+        "params": {
+          "type": "object",
+          "description": "The SolarParams state"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Time the configuration was created"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "description": "Time the configuration was last updated"
+        }
+      },
+      "required": ["id", "userId", "params", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/savedConfigs/{configId}": {
+      "schema": {
+        "$ref": "SavedConfig"
+      },
+      "description": "Saved solar configurations that users can share."
+    }
+  }
+}

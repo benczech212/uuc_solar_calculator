@@ -1,0 +1,36 @@
+import fs from "fs";
+
+let code = fs.readFileSync("src/App.tsx", "utf8");
+
+const errorCode = `<div className="flex items-baseline gap-4">
+                    <h2 className="text-8xl font-light text-white tracking-tighter">
+                      {results.paybackPeriod.toFixed(1)}
+                    </h2>
+                    <span className="text-2xl text-slate-400 font-serif italic">Years</span>
+                  </div>
+                  {compareResults && compareResults.paybackPeriod > 0 && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={\`text-sm font-mono \$\{results.paybackPeriod < compareResults.paybackPeriod ? 'text-emerald-400' : results.paybackPeriod > compareResults.paybackPeriod ? 'text-rose-400' : 'text-slate-500'}\`}>
+                        {results.paybackPeriod < compareResults.paybackPeriod ? '-' : '+'}{Math.abs(results.paybackPeriod - compareResults.paybackPeriod).toFixed(1)} yrs vs compare
+                      </span>
+                    </div>
+                  )}`;
+
+const fixedCode = `<div>
+                    <div className="flex items-baseline gap-4">
+                      <h2 className="text-8xl font-light text-white tracking-tighter">
+                        {results.paybackPeriod.toFixed(1)}
+                      </h2>
+                      <span className="text-2xl text-slate-400 font-serif italic">Years</span>
+                    </div>
+                    {compareResults && compareResults.paybackPeriod > 0 && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={\`text-sm font-mono \$\{results.paybackPeriod < compareResults.paybackPeriod ? 'text-emerald-400' : results.paybackPeriod > compareResults.paybackPeriod ? 'text-rose-400' : 'text-slate-500'}\`}>
+                          {results.paybackPeriod < compareResults.paybackPeriod ? '-' : '+'}{Math.abs(results.paybackPeriod - compareResults.paybackPeriod).toFixed(1)} yrs vs compare
+                        </span>
+                      </div>
+                    )}
+                  </div>`;
+
+code = code.replace(errorCode, fixedCode);
+fs.writeFileSync("src/App.tsx", code);

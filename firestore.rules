@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email_verified == true && request.auth.token.email == 'benczech212@gmail.com';
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+    
+    function isValidSavedConfig(data) {
+      return data.keys().hasAll(['id', 'userId', 'params', 'createdAt', 'updatedAt'])
+        && data.id is string
+        && data.id.size() <= 128
+        && data.userId is string
+        && data.userId == request.auth.uid
+        && data.title is string
+        && data.title.size() <= 200
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.params is map
+        && (!data.keys().hasAny(['isPublic']) || data.isPublic is bool);
+    }
+
+    match /savedConfigs/{configId} {
+      // Shared publicly
+      allow get: if existing().isPublic == true || (isSignedIn() && (existing().userId == request.auth.uid || isAdmin()));
+      allow list: if resource.data.isPublic == true || (isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()));
+
+      allow create: if isSignedIn() &&
+        incoming().id == configId &&
+        isValidSavedConfig(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() && (
+        isAdmin() || (
+          existing().userId == request.auth.uid &&
+          isValidSavedConfig(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().id == existing().id &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'params', 'updatedAt', 'isPublic'])
+        )
+      );
+
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+  }
+}
