@@ -134,41 +134,41 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8 mt-6">
           <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
-            <p className="text-[10px] uppercase text-slate-500 tracking-wider mb-1">Baseline Usage</p>
+            <p className="text-[11px] uppercase text-slate-500 tracking-wider mb-1">Baseline Usage</p>
             <p className="text-xl font-mono text-white">{baseAnnualKwh.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-xs text-slate-500">kWh/yr</span></p>
             <p className="text-xs text-slate-400 mt-1">{formatCurrency(currentBill)} /yr</p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-emerald-900/50">
-            <p className="text-[10px] uppercase text-emerald-500 tracking-wider mb-1">Reduction</p>
+            <p className="text-[11px] uppercase text-emerald-500 tracking-wider mb-1">Reduction</p>
             <p className="text-xl font-mono text-emerald-400">-{Math.min(totalReductionPercent, 100).toFixed(1)}%</p>
             <p className="text-xs text-emerald-500/80 mt-1">Avoid {formatCurrency(estimatedAnnualBillSavings)} /yr</p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-sky-900/50">
-            <p className="text-[10px] uppercase text-sky-500 tracking-wider mb-1">New Usage</p>
+            <p className="text-[11px] uppercase text-sky-500 tracking-wider mb-1">New Usage</p>
             <p className="text-xl font-mono text-sky-400">{newAnnualKwh.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-xs text-sky-500/50">kWh/yr</span></p>
             <p className="text-xs text-sky-500/70 mt-1">{formatCurrency(newBill)} /yr</p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-amber-900/50">
-            <p className="text-[10px] uppercase text-amber-500 tracking-wider mb-1">Upgrade Cost</p>
+            <p className="text-[11px] uppercase text-amber-500 tracking-wider mb-1">Upgrade Cost</p>
             <p className="text-xl font-mono text-amber-400">{formatCurrency(totalCost)}</p>
             <p className="text-xs text-amber-500/70 mt-1">{formatPayback(paybackYears)}</p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-purple-900/50">
-            <p className="text-[10px] uppercase text-purple-500 tracking-wider mb-1">Lifespan Net & ROI</p>
+            <p className="text-[11px] uppercase text-purple-500 tracking-wider mb-1">Lifespan Net & ROI</p>
             <p className="text-xl font-mono text-purple-400">{formatCurrency(totalLifespanSavings - totalCost)}</p>
             <p className="text-xs text-purple-500/70 mt-1 font-mono">
                ROI: {totalCost > 0 ? (((totalLifespanSavings - totalCost) / totalCost) * 100).toFixed(1) : 0}%
             </p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-teal-900/50">
-            <p className="text-[10px] uppercase text-teal-500 tracking-wider mb-1">CO₂ Averted</p>
+            <p className="text-[11px] uppercase text-teal-500 tracking-wider mb-1">CO₂ Averted</p>
             <p className="text-xl font-mono text-teal-400">{totalLifespanCo2Tons.toFixed(1)} <span className="text-xs text-teal-500/50">tons</span></p>
             <p className="text-xs text-teal-500/70 mt-1">Over project lifespans</p>
           </div>
           <div className="bg-slate-900/60 p-4 rounded-xl border border-sky-900/50 flex flex-col justify-center">
             <div className="flex items-center gap-1 mb-1">
               <Home className="w-3 h-3 text-sky-400/80" />
-              <p className="text-[10px] uppercase text-sky-400/80">Homes Offset</p>
+              <p className="text-[11px] uppercase text-sky-400/80">Homes Offset</p>
             </div>
             <p className="text-xl font-mono text-sky-400">{(totalLifespanCo2Tons / 4.515).toFixed(1)} <span className="text-xs text-sky-500/50">home-yrs</span></p>
             <p className="text-xs text-sky-500/70 mt-1">Equivalent lifespan savings</p>
@@ -214,7 +214,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
               <div className="flex-1 w-full space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4 w-full">
                   <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Project Name</label>
+                    <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Project Name</label>
                     <input
                       type="text"
                       value={p.name}
@@ -223,7 +223,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Method</label>
+                    <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Method</label>
                     <select
                       value={p.calculationMethod || 'percentage'}
                       onChange={(e) => updateProject(p.id, { calculationMethod: e.target.value as any })}
@@ -237,7 +237,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Upfront Cost ($)</label>
+                    <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Upfront Cost ($)</label>
                     <input
                         type="number"
                         value={p.upfrontCost}
@@ -246,7 +246,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Starts In (Mos)</label>
+                    <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Starts In (Mos)</label>
                     <input
                       type="number"
                       value={p.startMonthOut ?? 0}
@@ -256,7 +256,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Lifespan (Yrs)</label>
+                    <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Lifespan (Yrs)</label>
                     <input
                       type="number"
                       value={p.lifespanYears ?? 10}
@@ -269,10 +269,10 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                     <p className="text-sm font-semibold text-amber-500/90 font-mono">
                       -{Math.round(calculateReductionKwh(p, baseAnnualKwh)).toLocaleString()} kWh/yr
                     </p>
-                    <p className="text-[10px] text-teal-400 font-mono">
+                    <p className="text-[11px] text-teal-400 font-mono">
                       -{((calculateReductionKwh(p, baseAnnualKwh) * (p.lifespanYears || 10)) * (1 - params.gridRenewablePercentage / 100) * 0.00043).toFixed(1)}t CO₂ total
                     </p>
-                    <p className="text-[10px] text-purple-400 font-mono">
+                    <p className="text-[11px] text-purple-400 font-mono">
                       {(() => {
                         const savingsKwh = calculateReductionKwh(p, baseAnnualKwh);
                         let projectSavings = 0;
@@ -292,7 +292,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                 {(!p.calculationMethod || p.calculationMethod === 'percentage') && (
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Reduction %</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Reduction %</label>
                       <div className="flex items-center">
                         <input
                           type="number"
@@ -311,7 +311,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                 {p.calculationMethod === 'fixtures' && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Watts Before</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Watts Before</label>
                       <input
                         type="number"
                         value={p.wattsBefore ?? 60}
@@ -320,7 +320,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Watts After</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Watts After</label>
                       <input
                         type="number"
                         value={p.wattsAfter ?? 10}
@@ -329,7 +329,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Quantity</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Quantity</label>
                       <input
                         type="number"
                         value={p.quantity ?? 10}
@@ -338,7 +338,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Hours/Day</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Hours/Day</label>
                       <input
                         type="number"
                         value={p.hoursPerDay ?? 8}
@@ -352,7 +352,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                 {p.calculationMethod === 'kwh_reduction' && (
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">kWh Reduction / Month</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">kWh Reduction / Month</label>
                       <input
                         type="number"
                         value={p.kwhReductionPerMonth ?? 0}
@@ -366,7 +366,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                 {p.calculationMethod === 'usage_before_after' && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">kWh / Month Before</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">kWh / Month Before</label>
                       <input
                         type="number"
                         value={p.kwhBefore ?? 0}
@@ -375,7 +375,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">kWh / Month After</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">kWh / Month After</label>
                       <input
                         type="number"
                         value={p.kwhAfter ?? 0}
@@ -389,7 +389,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                 {p.calculationMethod === 'thermostat' && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Degree Decrease</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Degree Decrease</label>
                       <input
                         type="number"
                         value={p.degreeDecrease ?? 0}
@@ -398,7 +398,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">kWh Savings / ° / Mo</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">kWh Savings / ° / Mo</label>
                       <input
                         type="number"
                         value={p.kwhSavingsPerDegree ?? 0}

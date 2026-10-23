@@ -208,7 +208,7 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
             onClick={() => onApplyExtrema && onApplyExtrema(maxProfit.xValue)}
             className="bg-slate-950 p-4 rounded-lg border border-emerald-900/50 hover:border-emerald-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
           >
-            <span className="text-[10px] uppercase text-emerald-500 font-bold tracking-widest mb-1">Max 25-Yr Return</span>
+            <span className="text-[11px] uppercase text-emerald-500 font-bold tracking-widest mb-1">Max 25-Yr Return</span>
             <span className="text-xl text-emerald-400 font-mono tracking-tight">{formatCurrency(maxProfit.netProfit)}</span>
             <span className="text-xs text-slate-400 mt-1">at {formatXAxis(maxProfit.xValue)}</span>
           </button>
@@ -218,7 +218,7 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
             onClick={() => onApplyExtrema && onApplyExtrema(minPayback.xValue)}
             className="bg-slate-950 p-4 rounded-lg border border-amber-900/50 hover:border-amber-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
           >
-            <span className="text-[10px] uppercase text-amber-500 font-bold tracking-widest mb-1">Fastest Break-even</span>
+            <span className="text-[11px] uppercase text-amber-500 font-bold tracking-widest mb-1">Fastest Break-even</span>
             <span className="text-xl text-amber-400 font-mono tracking-tight">{minPayback.paybackPeriod.toFixed(1)} <span className="text-sm">Yrs</span></span>
             <span className="text-xs text-slate-400 mt-1">at {formatXAxis(minPayback.xValue)}</span>
           </button>

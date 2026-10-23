@@ -50,7 +50,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ params, resu
           <strong className="block text-amber-500 mb-1">{title}</strong>
           {content}
           {sectionKey && (
-            <span className="block mt-2 text-[10px] text-amber-500/70 uppercase tracking-wider font-mono">
+            <span className="block mt-2 text-[11px] text-amber-500/70 uppercase tracking-wider font-mono">
               Click to view formula
             </span>
           )}

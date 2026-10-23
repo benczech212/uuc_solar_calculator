@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Sun, Download, TrendingUp, Zap, PiggyBank, Receipt, Leaf, Battery, Wrench, BarChart2, Activity, Calculator, ShieldAlert, ChevronDown, ChevronUp, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, Home, FileText, User as UserIcon, LogOut, Loader2, Copy, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
+import { Sun, Download, TrendingUp, Zap, PiggyBank, Receipt, Leaf, Battery, Wrench, BarChart2, Activity, Calculator, ShieldAlert, ChevronDown, ChevronRight, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, Home, FileText, User as UserIcon, LogOut, Loader2, Copy, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
 import { Slider } from './components/Slider';
 import { RoiChart } from './components/Chart';
 import { SensitivityChart } from './components/SensitivityChart';
@@ -403,9 +403,9 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></div>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-amber-400">By Ben Czech</span>
+                <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-amber-400">By Ben Czech</span>
               </div>
-              <h1 className="text-4xl font-light tracking-tight text-white">UUC Solar ROI <span className="text-slate-500 italic font-serif">Calculator</span></h1>
+              <h1 className="text-2xl sm:text-4xl font-light tracking-tight text-white">UUC Solar ROI <span className="text-slate-500 italic font-serif">Calculator</span></h1>
             </div>
           </div>
             <div className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export default function App() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm bg-slate-800 hover:bg-slate-700 text-sky-400 border-slate-700 hover:border-slate-600"
                 >
                   <UserIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Sign In to Save</span>
+                  <span>Sign In to Save</span>
                 </button>
               ) : (
                 <button 
@@ -457,12 +457,14 @@ export default function App() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 hover:border-slate-600"
               >
                 <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export PDF</span>
+                <span>Export PDF</span>
               </button>
             </div>
         </header>
 
-        <div className="flex gap-2 mb-4 border-b border-slate-800 pb-4 overflow-x-auto">
+        <p className="text-sm text-slate-400 -mt-4">Change any input and the results update instantly. Click a highlighted number to see how it is calculated.</p>
+
+        <div className="flex flex-wrap gap-2 mb-4 border-b border-slate-800 pb-4">
           <button 
             onClick={() => setAppScreen('solar')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${appScreen === 'solar' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'}`}
@@ -492,18 +494,19 @@ export default function App() {
             <div className="space-y-6 flex-1">
               {/* Config Manager */}
               <div className="bg-slate-900/60 p-4 border border-slate-800 rounded-xl space-y-3 relative">
-                {!user ? (
-                  <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-xl border border-slate-800">
-                    <p className="text-sm text-slate-400 mb-3 text-center px-4">Sign in to save configurations to the cloud and get shareable links.</p>
-                    <button 
+                {!user && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p className="text-sm text-slate-400">Sign in with Google to save your setup and get a shareable link.</p>
+                    <button
                       onClick={signInWithGoogle}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm bg-slate-800 hover:bg-slate-700 text-sky-400 border-slate-700 hover:border-slate-600"
+                      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm bg-slate-800 hover:bg-slate-700 text-sky-400 border-slate-700 hover:border-slate-600 whitespace-nowrap"
                     >
                       <UserIcon className="w-4 h-4" />
-                      <span className="hidden sm:inline">Sign In to Save</span>
+                      <span>Sign In to Save</span>
                     </button>
                   </div>
-                ) : null}
+                )}
+                {user && (<>
                 <div className="flex flex-col gap-2">
                   <input 
                     type="text" 
@@ -557,7 +560,7 @@ export default function App() {
                 
                 {(savedConfigs.length > 0 || currentConfigId) && (
                   <div className="flex items-center gap-2 border-t border-slate-800 pt-3 mt-3">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-widest border-slate-800 whitespace-nowrap">Your Cloud</span>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-widest border-slate-800 whitespace-nowrap">Your Cloud</span>
                     <select 
                       onChange={(e) => loadConfig(e.target.value)}
                       value={currentConfigId && savedConfigs.find(c => c.id === currentConfigId) ? currentConfigId : ""}
@@ -579,10 +582,11 @@ export default function App() {
                     )}
                   </div>
                 )}
+                </>)}
 
                 {publicConfigs.length > 0 && (
                   <div className="flex items-center gap-2 border-t border-slate-800 pt-3 mt-3">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-widest border-slate-800 whitespace-nowrap">Public</span>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-widest border-slate-800 whitespace-nowrap">Shared</span>
                     <select 
                       onChange={(e) => loadConfig(e.target.value)}
                       value={currentConfigId && publicConfigs.find(c => c.id === currentConfigId) ? currentConfigId : ""}
@@ -601,8 +605,8 @@ export default function App() {
               <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('quotes')}>
                   <div className="flex items-center">
-                    <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                      {sectionsActive.quotes ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                    <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                      {sectionsActive.quotes ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
                     <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                       <FileText className="w-4 h-4 text-emerald-400" />
@@ -638,8 +642,8 @@ export default function App() {
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('system')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.system ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.system ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Zap className="w-4 h-4 text-amber-500" />
@@ -649,11 +653,11 @@ export default function App() {
                 <div className="flex bg-slate-800/80 p-1 rounded-lg" onClick={e => e.stopPropagation()}>
                   <button 
                     onClick={() => updateParam('inputMode', 'detailed')}
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.inputMode === 'detailed' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.inputMode === 'detailed' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
                   >Detailed</button>
                   <button 
                     onClick={() => updateParam('inputMode', 'total')}
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.inputMode === 'total' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.inputMode === 'total' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
                   >Total</button>
                 </div>
               </div>
@@ -739,8 +743,8 @@ export default function App() {
                         <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('energy')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.energy ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.energy ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Receipt className="w-4 h-4 text-amber-500" />
@@ -750,15 +754,15 @@ export default function App() {
                 <div className="flex bg-slate-800/80 p-1 rounded-lg" onClick={e => e.stopPropagation()}>
                   <button 
                     onClick={() => updateParam('usageMode', 'flat')}
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'flat' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'flat' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
                   >Flat</button>
                   <button 
                     onClick={() => updateParam('usageMode', 'monthly')}
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'monthly' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'monthly' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
                   >Monthly</button>
                   <button 
                     onClick={() => updateParam('usageMode', 'historical')}
-                    className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'historical' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.usageMode === 'historical' ? 'bg-amber-500/20 text-amber-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
                   >Historical</button>
                 </div>
               </div>
@@ -769,21 +773,21 @@ export default function App() {
                     {/* Computed Stats Card */}
                     <div className="bg-slate-950/60 p-4 border border-slate-800 rounded-xl space-y-3">
                       <div className="flex justify-between items-center pb-2 border-b border-slate-800/40">
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-300">Historical Computed Baseline</span>
+                        <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-300">Historical Computed Baseline</span>
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex bg-slate-900 p-0.5 rounded border border-slate-850">
                             <button
                               type="button"
                               onClick={() => updateParam('historicalCompMode', 'average')}
-                              className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${params.historicalCompMode === 'average' || !params.historicalCompMode ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-450'}`}
+                              className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${params.historicalCompMode === 'average' || !params.historicalCompMode ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-450'}`}
                             >Average</button>
                             <button
                               type="button"
                               onClick={() => updateParam('historicalCompMode', 'recent')}
-                              className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${params.historicalCompMode === 'recent' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-450'}`}
+                              className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${params.historicalCompMode === 'recent' ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-450'}`}
                             >Most Recent</button>
                           </div>
-                          <label className="flex items-center gap-1.5 cursor-pointer text-[9px] uppercase tracking-wider text-slate-400">
+                          <label className="flex items-center gap-1.5 cursor-pointer text-[10px] uppercase tracking-wider text-slate-400">
                             <input 
                               type="checkbox" 
                               checked={!!params.historicalByMonth}
@@ -797,12 +801,12 @@ export default function App() {
 
                       <div className="grid grid-cols-2 gap-4 pt-1">
                         <div>
-                          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Effective Utility Rate</p>
-                          <p className="text-base font-mono text-amber-400 font-semibold">${results.effectiveUtilityRate.toFixed(4)} <span className="text-[10px] text-slate-500 font-sans">/kWh</span></p>
+                          <p className="text-[11px] text-slate-500 uppercase tracking-wider">Effective Utility Rate</p>
+                          <p className="text-base font-mono text-amber-400 font-semibold">${results.effectiveUtilityRate.toFixed(4)} <span className="text-[11px] text-slate-500 font-sans">/kWh</span></p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Computed Monthly Usage</p>
-                          <p className="text-base font-mono text-white font-semibold">{Math.round(results.effectiveMonthlyUsageKwh).toLocaleString()} <span className="text-[10px] text-slate-500 font-sans">kWh</span></p>
+                          <p className="text-[11px] text-slate-500 uppercase tracking-wider">Computed Monthly Usage</p>
+                          <p className="text-base font-mono text-white font-semibold">{Math.round(results.effectiveMonthlyUsageKwh).toLocaleString()} <span className="text-[11px] text-slate-500 font-sans">kWh</span></p>
                         </div>
                       </div>
                     </div>
@@ -849,11 +853,11 @@ export default function App() {
                         <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                         {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((mo, i) => (
                           <div key={mo} className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-2 flex flex-col items-center">
-                            <label className="text-[9px] uppercase tracking-widest text-slate-500 mb-1">{mo}</label>
+                            <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-1">{mo}</label>
                             <input 
                               type="number"
                               className="w-full bg-slate-950 border border-slate-700 rounded text-xs text-white text-center font-mono py-1 focus:outline-none focus:border-amber-500"
-                              value={params.monthlyUsageProfile[i]}
+                              value={Math.round(params.monthlyUsageProfile[i])}
                               onChange={(e) => {
                                 const newProfile = [...params.monthlyUsageProfile];
                                 newProfile[i] = Number(e.target.value);
@@ -893,7 +897,7 @@ export default function App() {
                         onChange={(e) => updateParam('hasLinkedSellBackRate', e.target.checked)}
                         className="w-3 h-3 rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900" 
                       />
-                      <label htmlFor="linkSellBack" className="text-[10px] uppercase tracking-widest text-slate-500 cursor-pointer">Link to Utility Rate</label>
+                      <label htmlFor="linkSellBack" className="text-[11px] uppercase tracking-widest text-slate-500 cursor-pointer">Link to Utility Rate</label>
                     </div>
                   </div>
                   
@@ -945,8 +949,8 @@ export default function App() {
             <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('efficiency')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.efficiency ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.efficiency ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Sun className="w-4 h-4 text-amber-400" />
@@ -968,7 +972,7 @@ export default function App() {
                 <div className="flex items-center justify-between pb-1 border-b border-slate-800/40">
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-300 font-medium">Seasonal Generation Curve</span>
-                    <span className="text-[10px] text-slate-500">Applies a typical mid-latitude seasonal generation curve (summer high, winter low).</span>
+                    <span className="text-[11px] text-slate-500">Applies a typical mid-latitude seasonal generation curve (summer high, winter low).</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer ml-3">
                     <input 
@@ -998,14 +1002,14 @@ export default function App() {
                   <div className="flex bg-slate-800/80 p-1 rounded-lg">
                     <button 
                       onClick={() => updateParam('efficiencyMode', 'flat')}
-                      className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.efficiencyMode === 'flat' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.efficiencyMode === 'flat' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
                       style={{ flex: 1 }}
                     >
                       Flat
                     </button>
                     <button 
                       onClick={() => updateParam('efficiencyMode', 'monthly')}
-                      className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.efficiencyMode === 'monthly' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`text-[11px] uppercase tracking-wider px-3 py-1 rounded-md transition-colors ${params.efficiencyMode === 'monthly' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-500 hover:text-slate-300'}`}
                       style={{ flex: 1 }}
                     >
                       Monthly
@@ -1041,7 +1045,7 @@ export default function App() {
                       <div className="grid grid-cols-6 gap-2">
                         {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((mo, i) => (
                           <div key={mo} className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-2 flex flex-col items-center">
-                            <label className="text-[9px] uppercase tracking-widest text-slate-500 mb-1">{mo}</label>
+                            <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-1">{mo}</label>
                             <input 
                               type="number"
                               className="w-full bg-slate-950 border border-slate-700 rounded text-xs text-white text-center font-mono py-1 focus:outline-none focus:border-amber-500"
@@ -1059,7 +1063,7 @@ export default function App() {
                   )}
                 </div>
                 {!params.hasSolarEfficiency && (
-                  <div className="text-[10px] text-amber-500/70 font-mono italic px-1 pt-1">
+                  <div className="text-[11px] text-amber-500/70 font-mono italic px-1 pt-1">
                     * Solar efficiency is currently disabled. Toggle the switch above to include this section.
                   </div>
                 )}
@@ -1069,8 +1073,8 @@ export default function App() {
             <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('maintenance')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.maintenance ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.maintenance ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Wrench className="w-4 h-4 text-amber-500" />
@@ -1111,7 +1115,7 @@ export default function App() {
                   />
                 </div>
                 {!params.hasMaintenance && (
-                  <div className="text-[10px] text-amber-500/70 font-mono italic px-1 pt-1">
+                  <div className="text-[11px] text-amber-500/70 font-mono italic px-1 pt-1">
                     * Maintenance costs are currently disabled. Toggle the switch above to include this section.
                   </div>
                 )}
@@ -1121,8 +1125,8 @@ export default function App() {
             <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('storage')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.storage ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.storage ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Battery className="w-4 h-4 text-emerald-500" />
@@ -1175,7 +1179,7 @@ export default function App() {
                   />
                 </div>
                 {!params.hasBattery && (
-                  <div className="text-[10px] text-amber-500/70 font-mono italic px-1 pt-1">
+                  <div className="text-[11px] text-amber-500/70 font-mono italic px-1 pt-1">
                     * Battery storage is currently disabled. Toggle the switch above to include this section.
                   </div>
                 )}
@@ -1185,8 +1189,8 @@ export default function App() {
             <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('incentives')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.incentives ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.incentives ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <Receipt className="w-4 h-4 text-rose-400" />
@@ -1241,7 +1245,7 @@ export default function App() {
                   />
                 </div>
                 {!params.hasIncentives && (
-                  <div className="text-[10px] text-amber-500/70 font-mono italic px-1 pt-1">
+                  <div className="text-[11px] text-amber-500/70 font-mono italic px-1 pt-1">
                     * Incentives and tax credits are currently disabled. Toggle the switch above to include this section.
                   </div>
                 )}
@@ -1251,8 +1255,8 @@ export default function App() {
             <div className="pt-4 mt-2 border-t border-slate-800/50 space-y-6">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800/50 cursor-pointer group" onClick={() => toggleSection('financing')}>
                 <div className="flex items-center">
-                  <button className="mr-2 text-slate-600 group-hover:text-amber-500 transition-colors">
-                    {sectionsActive.financing ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <button className="mr-2 text-slate-500 group-hover:text-amber-500 transition-colors">
+                    {sectionsActive.financing ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                   <h2 className="text-sm uppercase tracking-widest text-slate-400 flex items-center space-x-2">
                     <PiggyBank className="w-4 h-4 text-purple-400" />
@@ -1392,7 +1396,7 @@ export default function App() {
                   </div>
                 </div>
                 {!params.isFinanced && (
-                  <div className="text-[10px] text-amber-500/70 font-mono italic px-1 pt-1">
+                  <div className="text-[11px] text-amber-500/70 font-mono italic px-1 pt-1">
                     * Financing options are currently disabled. Toggle the switch above to include this section.
                   </div>
                 )}
@@ -1423,7 +1427,7 @@ export default function App() {
                     }`}
                   >
                     <BarChart2 className="w-4 h-4" />
-                    <span>Performance Cards</span>
+                    <span>Key Numbers</span>
                   </button>
                   <button
                     onClick={() => setSummaryTab('narrative')}
@@ -1434,11 +1438,10 @@ export default function App() {
                     }`}
                   >
                     <FileText className="w-4 h-4" />
-                    <span>Executive Narrative</span>
+                    <span>Written Summary</span>
                   </button>
                 </div>
                 
-                <span className="text-[10px] uppercase font-mono text-slate-500 mr-2 border border-slate-800/60 px-2 py-1 rounded bg-slate-950 select-none hidden sm:inline-block">Summary Panel</span>
               </div>
 
               {summaryTab === 'narrative' ? (
@@ -1454,7 +1457,7 @@ export default function App() {
 
                   <div className="flex items-center gap-2 mb-1">
                     <TrendingUp className="w-4 h-4 text-amber-500" />
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-amber-500 font-bold">Break-even Velocity</span>
+                    <span className="text-[11px] uppercase tracking-[0.3em] text-amber-500 font-bold">Payback Period</span>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mt-1 gap-4">
@@ -1488,8 +1491,8 @@ export default function App() {
                           {formatCurrency(results.total25YearSavings)}
                         </h2>
                         <div className="flex items-center gap-2">
-                           <span className="text-[9px] bg-rose-500/10 text-rose-400 uppercase tracking-widest px-1.5 py-0.5 rounded border border-rose-500/20">Loss at 25-Yr End-of-Life</span>
-                           <span className="text-[9px] text-slate-400 uppercase tracking-widest">
+                           <span className="text-[10px] bg-rose-500/10 text-rose-400 uppercase tracking-widest px-1.5 py-0.5 rounded border border-rose-500/20">Loss at 25-Yr End-of-Life</span>
+                           <span className="text-[10px] text-slate-400 uppercase tracking-widest">
                              {results.paybackPeriod > 25 ? `Ext. Break-even: ${results.paybackPeriod.toFixed(1)} Yrs` : 'Never breaks even'}
                            </span>
                         </div>
@@ -1503,7 +1506,7 @@ export default function App() {
                     >
                       <div className="flex items-center sm:justify-end gap-2 mb-1">
                         <Sun className="w-4 h-4 text-amber-500/80" />
-                        <p className="text-[10px] uppercase tracking-widest text-amber-500/80 group-hover/metric:text-amber-400 transition-colors">System Size</p>
+                        <p className="text-[11px] uppercase tracking-widest text-amber-500/80 group-hover/metric:text-amber-400 transition-colors">System Size</p>
                       </div>
                       <p className="text-3xl text-amber-400 font-mono font-light tracking-tight group-hover/metric:text-amber-300 transition-colors">
                         {results.systemSizeKW.toFixed(1)} <span className="text-lg text-amber-500/50">kW</span>
@@ -1519,11 +1522,11 @@ export default function App() {
                     >
                       <div className="flex items-center gap-1.5 mb-1">
                         <PiggyBank className="w-3 h-3 text-slate-500" />
-                        <p className="text-[9px] uppercase tracking-wider text-slate-500 group-hover/card:text-amber-500 transition-colors">Net Cost</p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500 group-hover/card:text-amber-500 transition-colors">Net Cost</p>
                       </div>
                       <p className="text-base sm:text-lg font-mono text-white group-hover/card:text-amber-400 transition-colors">{formatCurrency(results.netCost)}</p>
                       {compareResults && (
-                        <p className={`text-[9px] font-mono mt-0.5 ${results.netCost < compareResults.netCost ? 'text-emerald-400' : results.netCost > compareResults.netCost ? 'text-rose-400' : 'text-slate-500'}`}>
+                        <p className={`text-[10px] font-mono mt-0.5 ${results.netCost < compareResults.netCost ? 'text-emerald-400' : results.netCost > compareResults.netCost ? 'text-rose-400' : 'text-slate-500'}`}>
                           {results.netCost < compareResults.netCost ? '-' : '+'}{formatCurrency(Math.abs(results.netCost - compareResults.netCost))} vs compare
                         </p>
                       )}
@@ -1535,13 +1538,13 @@ export default function App() {
                     >
                       <div className="flex items-center gap-1.5 mb-1">
                         <Zap className="w-3 h-3 text-amber-500/80" />
-                        <p className="text-[9px] uppercase tracking-wider text-amber-500/80 group-hover/card:text-amber-500 transition-colors">Yearly Gen</p>
+                        <p className="text-[10px] uppercase tracking-wider text-amber-500/80 group-hover/card:text-amber-500 transition-colors">Yearly Gen</p>
                       </div>
                       <p className="text-base sm:text-lg font-mono text-amber-400 group-hover/card:text-amber-300 transition-colors">
-                        {results.annualGeneration.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[10px] text-amber-500/50 font-sans">kWh</span>
+                        {results.annualGeneration.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[11px] text-amber-500/50 font-sans">kWh</span>
                       </p>
                       {compareResults && (
-                        <p className={`text-[9px] font-mono mt-0.5 ${results.annualGeneration > compareResults.annualGeneration ? 'text-emerald-400' : results.annualGeneration < compareResults.annualGeneration ? 'text-rose-400' : 'text-slate-500'}`}>
+                        <p className={`text-[10px] font-mono mt-0.5 ${results.annualGeneration > compareResults.annualGeneration ? 'text-emerald-400' : results.annualGeneration < compareResults.annualGeneration ? 'text-rose-400' : 'text-slate-500'}`}>
                           {results.annualGeneration > compareResults.annualGeneration ? '+' : '-'}{Math.abs(results.annualGeneration - compareResults.annualGeneration).toLocaleString('en-US', {maximumFractionDigits: 0})} kWh vs compare
                         </p>
                       )}
@@ -1553,13 +1556,13 @@ export default function App() {
                     >
                       <div className="flex items-center gap-1.5 mb-1">
                         <Leaf className={`w-3 h-3 ${results.total25YearSavings >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`} />
-                        <p className={`text-[9px] uppercase tracking-wider group-hover/card:text-amber-500 transition-colors ${results.total25YearSavings >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`}>25-Yr Value</p>
+                        <p className={`text-[10px] uppercase tracking-wider group-hover/card:text-amber-500 transition-colors ${results.total25YearSavings >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`}>25-Yr Value</p>
                       </div>
                       <p className={`text-base sm:text-lg font-mono group-hover/card:text-amber-400 transition-colors ${results.total25YearSavings >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                         {formatCurrency(results.total25YearSavings)}
                       </p>
                       {compareResults && (
-                        <p className={`text-[9px] font-mono mt-0.5 ${results.total25YearSavings > compareResults.total25YearSavings ? 'text-emerald-400' : results.total25YearSavings < compareResults.total25YearSavings ? 'text-rose-400' : 'text-slate-500'}`}>
+                        <p className={`text-[10px] font-mono mt-0.5 ${results.total25YearSavings > compareResults.total25YearSavings ? 'text-emerald-400' : results.total25YearSavings < compareResults.total25YearSavings ? 'text-rose-400' : 'text-slate-500'}`}>
                           {results.total25YearSavings > compareResults.total25YearSavings ? '+' : '-'}{formatCurrency(Math.abs(results.total25YearSavings - compareResults.total25YearSavings))} vs compare
                         </p>
                       )}
@@ -1571,10 +1574,10 @@ export default function App() {
                     >
                       <div className="flex items-center gap-1.5 mb-1">
                         <TrendingUp className={`w-3 h-3 ${results.roiPercentage >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`} />
-                        <p className={`text-[9px] uppercase tracking-wider group-hover/card:text-amber-500 transition-colors ${results.roiPercentage >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`}>25-Yr ROI</p>
+                        <p className={`text-[10px] uppercase tracking-wider group-hover/card:text-amber-500 transition-colors ${results.roiPercentage >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}`}>25-Yr ROI</p>
                       </div>
                       <p className={`text-base sm:text-lg font-mono group-hover/card:text-emerald-400 transition-colors ${results.roiPercentage >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                        {results.roiPercentage > 0 ? '+' : ''}{results.roiPercentage.toFixed(1)}<span className="text-[10px] text-emerald-500/50">%</span>
+                        {results.roiPercentage > 0 ? '+' : ''}{results.roiPercentage.toFixed(1)}<span className="text-[11px] text-emerald-500/50">%</span>
                       </p>
                     </div>
                   </div>
@@ -1585,9 +1588,9 @@ export default function App() {
                       className="cursor-pointer group/card hover:bg-slate-800/20 p-1.5 rounded-lg transition-all"
                       title="Click to view exported energy sales formula"
                     >
-                      <p className="text-[9px] uppercase tracking-wider text-emerald-500 mb-1 group-hover/card:text-amber-500 transition-colors">Exported & Sold</p>
+                      <p className="text-[10px] uppercase tracking-wider text-emerald-500 mb-1 group-hover/card:text-amber-500 transition-colors">Exported & Sold</p>
                       <p className="text-sm sm:text-base text-emerald-400 font-mono group-hover/card:text-amber-400 transition-colors">
-                        {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[10px] text-emerald-500/50">kWh/yr</span>
+                        {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[11px] text-emerald-500/50">kWh/yr</span>
                       </p>
                       <p className="text-[8px] text-slate-500 mt-0.5 uppercase">≈ {formatCurrency(results.annualGridSales * params.sellBackRate)} earned</p>
                     </div>
@@ -1596,9 +1599,9 @@ export default function App() {
                       className="cursor-pointer group/card hover:bg-slate-800/20 p-1.5 rounded-lg transition-all"
                       title="Click to view battery calculations"
                     >
-                      <p className="text-[9px] uppercase tracking-wider text-slate-400 mb-1 group-hover/card:text-amber-500 transition-colors">Battery Used</p>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-1 group-hover/card:text-amber-500 transition-colors">Battery Used</p>
                       <p className="text-sm sm:text-base text-white font-mono group-hover/card:text-amber-400 transition-colors">
-                        {results.annualBatteryDraw.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[10px] text-slate-500">kWh/yr</span>
+                        {results.annualBatteryDraw.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[11px] text-slate-500">kWh/yr</span>
                       </p>
                       <p className="text-[8px] text-slate-500 mt-0.5 uppercase">Stored power</p>
                     </div>
@@ -1607,9 +1610,9 @@ export default function App() {
                       className="cursor-pointer group/card hover:bg-slate-800/20 p-1.5 rounded-lg transition-all"
                       title="Click to view grid purchase formula"
                     >
-                      <p className="text-[9px] uppercase tracking-wider text-rose-500 mb-1 group-hover/card:text-amber-500 transition-colors">Grid Purchase</p>
+                      <p className="text-[10px] uppercase tracking-wider text-rose-500 mb-1 group-hover/card:text-amber-500 transition-colors">Grid Purchase</p>
                       <p className="text-sm sm:text-base text-rose-400 font-mono group-hover/card:text-amber-400 transition-colors">
-                        {results.annualGridPurchase.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[10px] text-rose-500/50">kWh/yr</span>
+                        {results.annualGridPurchase.toLocaleString('en-US', {maximumFractionDigits: 0})} <span className="text-[11px] text-rose-500/50">kWh/yr</span>
                       </p>
                       <p className="text-[8px] text-slate-500 mt-0.5 uppercase">≈ {formatCurrency(results.annualGridPurchase * params.utilityRate)} spent</p>
                     </div>
@@ -1622,7 +1625,7 @@ export default function App() {
                       className="cursor-pointer group/card hover:bg-slate-800/20 p-1.5 rounded-lg transition-all"
                       title="Click to view carbon emission reduction details"
                     >
-                      <p className="text-[9px] uppercase tracking-wider text-emerald-400/80 mb-1 group-hover/card:text-amber-400 transition-colors">Renewable Mix</p>
+                      <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 mb-1 group-hover/card:text-amber-400 transition-colors">Renewable Mix</p>
                       <p className="text-sm sm:text-base text-emerald-400 font-mono group-hover/card:text-amber-400 transition-colors">
                         {results.co2Impact.newRenewablePercent.toFixed(1)}%
                       </p>
@@ -1633,9 +1636,9 @@ export default function App() {
                       className="cursor-pointer group/card hover:bg-slate-800/20 p-1.5 rounded-lg transition-all"
                       title="Click to view CO2 avoid savings calculations"
                     >
-                      <p className="text-[9px] uppercase tracking-wider text-sky-400 mb-1 group-hover/card:text-amber-400 transition-colors">Annual Impact</p>
+                      <p className="text-[10px] uppercase tracking-wider text-sky-400 mb-1 group-hover/card:text-amber-400 transition-colors">Annual Impact</p>
                       <p className="text-sm sm:text-base text-sky-400 font-mono group-hover/card:text-amber-400 transition-colors">
-                        {results.co2Impact.co2SavedTonsPerYear.toFixed(2)} <span className="text-[10px] font-sans">Tons</span>
+                        {results.co2Impact.co2SavedTonsPerYear.toFixed(2)} <span className="text-[11px] font-sans">Tons</span>
                       </p>
                       <p className="text-[8px] text-slate-500 mt-0.5 uppercase">CO₂e Avoided</p>
                     </div>
@@ -1646,10 +1649,10 @@ export default function App() {
                     >
                       <div className="flex items-center gap-1 mb-0.5">
                         <Home className="w-3 h-3 text-sky-400/80" />
-                        <p className="text-[9px] uppercase tracking-wider text-sky-400/80">Homes Offset</p>
+                        <p className="text-[10px] uppercase tracking-wider text-sky-400/80">Homes Offset</p>
                       </div>
                       <p className="text-sm sm:text-base text-sky-400 font-mono">
-                        {(results.co2Impact.co2SavedTonsPerYear / 4.515).toFixed(1)} <span className="text-[10px] text-sky-500/50 font-sans">homes</span>
+                        {(results.co2Impact.co2SavedTonsPerYear / 4.515).toFixed(1)} <span className="text-[11px] text-sky-500/50 font-sans">homes</span>
                       </p>
                     </div>
                   </div>
@@ -1673,7 +1676,7 @@ export default function App() {
                     className={`flex items-center gap-2 text-xs uppercase tracking-wider px-3 py-2 rounded-lg transition-colors ${activeTab === 'sensitivity' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                   >
                     <BarChart2 className="w-4 h-4" />
-                    <span>Parameter Space</span>
+                    <span>Sensitivity</span>
                   </button>
                   <button 
                     onClick={() => setActiveTab('equations')}
@@ -1974,7 +1977,7 @@ export default function App() {
             }
             className="bg-slate-900 border border-slate-700/60 rounded-2xl p-1.5 w-[210px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden backdrop-blur-lg font-mono text-xs text-slate-300"
           >
-            <div className="px-3 py-2 border-b border-slate-800 text-slate-400 font-semibold text-[10px] uppercase tracking-wider select-none truncate">
+            <div className="px-3 py-2 border-b border-slate-800 text-slate-400 font-semibold text-[11px] uppercase tracking-wider select-none truncate">
               {EQUATION_LABELS[pendingEquationPopup] || 'Equation Details'}
             </div>
             
@@ -2031,9 +2034,9 @@ function AdminConfigsManager() {
             <h5 className="text-white font-medium">{c.title}</h5>
             <p className="text-xs text-slate-500 max-w-lg truncate">{c.description || 'No description'}</p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ID: {c.id}</span>
-              <span className="text-[10px] bg-indigo-900/40 text-indigo-400 px-2 py-0.5 rounded border border-indigo-700/50">User: {c.userId}</span>
-              {c.isPublic && <span className="text-[10px] bg-emerald-900/40 text-emerald-400 px-2 py-0.5 rounded border border-emerald-700/50">Public</span>}
+              <span className="text-[11px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ID: {c.id}</span>
+              <span className="text-[11px] bg-indigo-900/40 text-indigo-400 px-2 py-0.5 rounded border border-indigo-700/50">User: {c.userId}</span>
+              {c.isPublic && <span className="text-[11px] bg-emerald-900/40 text-emerald-400 px-2 py-0.5 rounded border border-emerald-700/50">Public</span>}
             </div>
           </div>
           <button 
