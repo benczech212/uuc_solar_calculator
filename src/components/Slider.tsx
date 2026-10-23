@@ -58,7 +58,7 @@ export function Slider({ label, valueDisplay, isLocked, onToggleLock, onSetDefau
             disabled={isLocked}
             className="w-16 sm:w-24 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded text-xs text-white text-right font-mono py-1 px-1.5 focus:outline-none focus:border-amber-500 disabled:opacity-50"
           />
-          <span className="text-[10px] text-slate-500 font-mono hidden sm:inline text-right min-w-[3rem]">
+          <span className="text-[11px] text-slate-500 font-mono hidden sm:inline text-right min-w-[3rem]">
             = {valueDisplay}
           </span>
         </div>
@@ -82,7 +82,7 @@ export function Slider({ label, valueDisplay, isLocked, onToggleLock, onSetDefau
           {...props}
         />
       </div>
-      <div className="flex justify-between text-[10px] text-slate-600 font-mono">
+      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
         <span>{props.min}</span>
         <span>{props.max}{props.max === 100 || props.max === 10 ? '%' : '+'}</span>
       </div>
