@@ -1,12 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Sun, Download, TrendingUp, Zap, PiggyBank, Receipt, Leaf, Battery, Wrench, BarChart2, Activity, Calculator, ShieldAlert, ChevronDown, ChevronUp, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, Home, FileText, User as UserIcon, LogOut, Loader2, Copy, Eye, EyeOff, Bot, Sparkles, Trash2, Plus } from 'lucide-react';
+import { Sun, Download, TrendingUp, Zap, PiggyBank, Receipt, Leaf, Battery, Wrench, BarChart2, Activity, Calculator, ShieldAlert, ChevronDown, ChevronUp, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, Home, FileText, User as UserIcon, LogOut, Loader2, Copy, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
 import { Slider } from './components/Slider';
 import { RoiChart } from './components/Chart';
 import { SensitivityChart } from './components/SensitivityChart';
 import { Equations } from './components/Equations';
 import { OutageChart } from './components/OutageChart';
 import { MonthlyBalanceChart } from './components/MonthlyBalanceChart';
-import { Chatbot } from './components/Chatbot';
 import { ChaliceIcon } from './components/ChaliceIcon';
 import { ComposedChart, BarChart, AreaChart } from 'recharts';
 import { RenewabilityChart } from './components/RenewabilityChart';
@@ -112,71 +111,23 @@ const getInitialDefaults = (): SolarParams => {
   return DEFAULT_PARAMS;
 };
 
-const PROMPT_TEMPLATES: Record<string, { label: string, prompt: string }> = {
-  cost: {
-    label: "Gross System Cost",
-    prompt: "Can you explain how the Gross System Cost is calculated, what variables affect it (such as battery or panel selection), and how a system owner can optimize their upfront investment?"
-  },
-  net: {
-    label: "Net Investment",
-    prompt: "Can you explain how incentives, rebates, and tax credits lower the Net Investment, how the 30% Solar ITC works, and how this impacts real-world break-even timelines?"
-  },
-  yr1without: {
-    label: "Year 1 Bill Without Solar",
-    prompt: "How is the utility baseline calculated without solar? What impact do net-metering structures and energy usage profiles have on this rating?"
-  },
-  yr1with: {
-    label: "Year 1 Bill With Solar",
-    prompt: "Can you explain the difference in Year 1 utility bills with solar included, how sell-back configurations and grid purchases play a role, and why my offset is computed this way?"
-  },
-  yr1savings: {
-    label: "Year 1 Savings",
-    prompt: "How are Year 1 savings derived? Please explain the calculation that deducts grid billings and maintenance fees, and how to maximize first-year performance."
-  },
-  projection: {
-    label: "25-Year Projection Loop",
-    prompt: "Walk me through how the 25-Year projection loop models utility rate inflation, monthly solar degradation, battery life degradation, and why cumulative savings grow over time."
-  },
-  payback: {
-    label: "Break-even / Payback Period",
-    prompt: "How is the exact break-even (payback period) calculated? Why do some systems pay back faster than others, and what triggers an infinite or delayed payback?"
-  },
-  co2: {
-    label: "CO2 Impact",
-    prompt: "What is the science behind the CO2 savings calculation (tons saved)? How does our local grid's renewable percentage alter the final carbon impact?"
-  },
-  co2homes: {
-    label: "Equivalent Homes Offset",
-    prompt: "How did we estimate the number of equivalent homes offset? What are the standard EPA baseline assumptions used for average American household energy consumption?"
-  },
-  yearlygen: {
-    label: "Yearly Generation",
-    prompt: "Explain how annual energy yield (kWh) is projected from system size. Does it include standard environmental losses, panel angle, or weather variability?"
-  },
-  exported_sold: {
-    label: "Exported & Sold",
-    prompt: "How does net energy metering work when exporting surplus solar to the grid? Why is the grid-sell-back rate crucial to solar ROI?"
-  },
-  battery_utilization: {
-    label: "Battery Utilization",
-    prompt: "Explain the mathematics of battery utilization. How does a hybrid storage scheme work during sunlit peak hours vs twilight and overnight draw?"
-  },
-  grid_purchase: {
-    label: "Grid Purchase Needed",
-    prompt: "Why must a solar system still purchase grid power? Explain the gap between total generation, actual hourly load alignment, and winter/summer seasonality."
-  },
-  gridsales: {
-    label: "Grid Sales (Surplus Export)",
-    prompt: "How is excess solar generation (Grid Sales) calculated, how does it direct flow into the grid, and how does battery charging capacity affect the final sales volume?"
-  },
-  "25yr_roi": {
-    label: "25-Year ROI",
-    prompt: "Explain how the 25-Year Return on Investment percentage is calculated. How does this compound rate compare to other traditional asset investments?"
-  },
-  cum_savings: {
-    label: "Cumulative Savings",
-    prompt: "Can you explain how the Year-over-Year Cumulative Savings are calculated, how they accumulate, and why they serve as the foundation for the break-even payback calculation?"
-  }
+const EQUATION_LABELS: Record<string, string> = {
+  cost: "Gross System Cost",
+  net: "Net Investment",
+  yr1without: "Year 1 Bill Without Solar",
+  yr1with: "Year 1 Bill With Solar",
+  yr1savings: "Year 1 Savings",
+  projection: "25-Year Projection Loop",
+  payback: "Break-even / Payback Period",
+  co2: "CO2 Impact",
+  co2homes: "Equivalent Homes Offset",
+  yearlygen: "Yearly Generation",
+  exported_sold: "Exported & Sold",
+  battery_utilization: "Battery Utilization",
+  grid_purchase: "Grid Purchase Needed",
+  gridsales: "Grid Sales (Surplus Export)",
+  "25yr_roi": "25-Year ROI",
+  cum_savings: "Cumulative Savings"
 };
 
 export default function App() {
@@ -197,7 +148,6 @@ export default function App() {
 
   const [pendingEquationPopup, setPendingEquationPopup] = useState<string | null>(null);
   const [popupCoords, setPopupCoords] = useState<{ x: number; y: number } | null>(null);
-  const [externalPrompt, setExternalPrompt] = useState<{ text: string; timestamp: number } | null>(null);
 
   const navigateToEquation = (sectionKey: string, e?: React.MouseEvent) => {
     setPendingEquationPopup(sectionKey);
@@ -272,14 +222,6 @@ export default function App() {
     setPendingEquationPopup(null);
   };
 
-  const handleAskAiAboutEquation = (sectionKey: string) => {
-    const metricInfo = PROMPT_TEMPLATES[sectionKey] || { label: "this formula", prompt: `Explain the math and real-world factors behind the ${sectionKey} calculations.` };
-    setExternalPrompt({
-      text: metricInfo.prompt,
-      timestamp: Date.now()
-    });
-    setPendingEquationPopup(null);
-  };
   const [sensitivityVar, setSensitivityVar] = useState<SensitivityVariable>('systemSize');
   const [sensitivityMetric, setSensitivityMetric] = useState<'profit' | 'breakeven' | 'both' | 'slope'>('both');
   
@@ -1848,12 +1790,6 @@ export default function App() {
         )}
 
       </div>
-      <Chatbot 
-        params={params} 
-        lockedKeys={lockedParams} 
-        onUpdateParams={(newParams) => setParams(prev => ({ ...prev, ...newParams }))} 
-        externalPrompt={externalPrompt}
-      />
       <PdfReport params={effectiveParams} results={results} vendorName={vendorName} isHidden={true} />
       {showPdfPreview && (
         <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col">
@@ -2009,7 +1945,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Ask AI / View Math Equation Popup (Sleek Context Menu style) */}
+      {/* View Math Equation Popup (Sleek Context Menu style) */}
       {pendingEquationPopup && (
         <>
           {/* Transparent backdrop to detect clicking away */}
@@ -2039,7 +1975,7 @@ export default function App() {
             className="bg-slate-900 border border-slate-700/60 rounded-2xl p-1.5 w-[210px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden backdrop-blur-lg font-mono text-xs text-slate-300"
           >
             <div className="px-3 py-2 border-b border-slate-800 text-slate-400 font-semibold text-[10px] uppercase tracking-wider select-none truncate">
-              {PROMPT_TEMPLATES[pendingEquationPopup]?.label || 'Equation Details'}
+              {EQUATION_LABELS[pendingEquationPopup] || 'Equation Details'}
             </div>
             
             <div className="flex flex-col gap-0.5 mt-1">
@@ -2055,17 +1991,6 @@ export default function App() {
                 <span>View Formula Steps</span>
               </button>
               
-              <button 
-                onClick={() => {
-                  handleAskAiAboutEquation(pendingEquationPopup);
-                  setPendingEquationPopup(null);
-                  setPopupCoords(null);
-                }}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-left text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors group w-full"
-              >
-                <Bot className="w-4 h-4 text-amber-550 group-hover:text-amber-400 transition-colors" />
-                <span>Ask UUC Solar AI</span>
-              </button>
             </div>
           </div>
         </>
