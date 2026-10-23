@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# UUC Solar ROI Calculator
 
-# Run and deploy your AI Studio app
+A static Vite + React app that estimates the 25-year return on a solar system for the Unitarian
+Universalists of Clearwater. Saved and shared configurations are stored in Firestore; sign-in is Google via
+Firebase Auth.
 
-This contains everything you need to run your app locally.
+Live site: https://benczech212.github.io/uuc_solar_calculator/
 
-View your app in AI Studio: https://ai.studio/apps/befb6ec5-9ea2-4e83-8ed3-163e20a51cf5
+## Run locally
 
-## Run Locally
+Prerequisites: Node.js 22.
 
-**Prerequisites:**  Node.js
+1. `npm install`
+2. `npm run dev` and open the URL Vite prints (http://localhost:5173/uuc_solar_calculator/).
 
+`npm run build` writes the static site to `dist/` (served under `/uuc_solar_calculator/`); `npm run preview`
+serves that build locally.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Deploy
+
+`.github/workflows/pages.yml` builds every push and pull request, and deploys `main` to GitHub Pages
+(Settings → Pages → Source: GitHub Actions).
+
+## Firebase
+
+`firebase-applet-config.json` holds the Firebase web config. The web API key is a public identifier, not a
+secret: access is controlled by `firestore.rules`, and the key should be restricted in Google Cloud to the
+site's domains and the Firebase APIs.

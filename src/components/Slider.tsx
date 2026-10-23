@@ -31,7 +31,7 @@ export function Slider({ label, valueDisplay, isLocked, onToggleLock, onSetDefau
             <button 
               onClick={onToggleLock} 
               className={cn("p-1 rounded transition-colors", isLocked ? "bg-rose-500/20 text-rose-400" : "bg-slate-800/50 text-slate-500 hover:text-slate-300")}
-              title={isLocked ? "Unlock parameter" : "Lock parameter (prevent AI from changing)"}
+              title={isLocked ? "Unlock parameter" : "Lock parameter"}
             >
               {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
             </button>

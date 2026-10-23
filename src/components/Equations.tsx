@@ -28,7 +28,7 @@ export function VariableLink({ name, eqKey, sliderId, sliderSection, onNavigateT
       <button
         onClick={() => onNavigateToEquation(eqKey)}
         className="font-semibold text-amber-400 hover:text-amber-300 hover:underline cursor-pointer hover:bg-amber-400/10 px-1 py-0.5 rounded transition-all inline-block align-baseline text-left font-mono"
-        title={`Click to view formula or ask AI about ${name}`}
+        title={`Click to view formula for ${name}`}
       >
         {name}
       </button>
