@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ParamInfo } from '../paramInfo';
-import { ChevronDown, GitCompare } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -55,16 +55,13 @@ interface SectionProps {
   onToggleOpen: () => void;
   enabled?: boolean;
   onToggleEnabled?: (v: boolean) => void;
-  comparing?: boolean;
-  onCompare?: () => void;
   headerExtra?: React.ReactNode;
   info?: ParamInfo;
   children: React.ReactNode;
 }
 
-// A collapsible group of inputs. Optional sections carry an on/off switch and a
-// "Compare" button that shows the results with that section flipped.
-export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, onToggleEnabled, comparing, onCompare, headerExtra, info, children }: SectionProps) {
+// A collapsible group of inputs. Optional sections carry an on/off switch.
+export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, onToggleEnabled, headerExtra, info, children }: SectionProps) {
   const optional = onToggleEnabled !== undefined;
   return (
     <section id={id} className="border border-slate-800 rounded-xl bg-slate-900/40 scroll-mt-4">
@@ -79,19 +76,6 @@ export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, on
         </button>
         <InfoTip info={info} label={title} />
         {headerExtra}
-        {onCompare && (
-          <button
-            type="button"
-            onClick={onCompare}
-            title={`Show results ${enabled ? 'without' : 'with'} ${title.toLowerCase()} for comparison`}
-            className={cn(
-              'flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors',
-              comparing ? 'bg-indigo-500/20 border-indigo-400/50 text-indigo-300' : 'border-slate-700 text-slate-400 hover:text-slate-200'
-            )}
-          >
-            <GitCompare className="w-3.5 h-3.5" /> Compare
-          </button>
-        )}
         {optional && <Toggle checked={!!enabled} onChange={onToggleEnabled!} label={`Include ${title}`} />}
       </div>
       {open && (
@@ -105,13 +89,12 @@ export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, on
   );
 }
 
-export function Stat({ label, value, sub, tone = 'default', onClick, delta }: {
+export function Stat({ label, value, sub, tone = 'default', onClick }: {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
   tone?: 'default' | 'good' | 'bad' | 'sun' | 'sky';
   onClick?: (e: React.MouseEvent) => void;
-  delta?: React.ReactNode;
 }) {
   const color = { default: 'text-white', good: 'text-emerald-400', bad: 'text-rose-400', sun: 'text-amber-400', sky: 'text-sky-400' }[tone];
   return (
@@ -124,7 +107,6 @@ export function Stat({ label, value, sub, tone = 'default', onClick, delta }: {
       <span className="block text-xs text-slate-400 mb-1">{label}</span>
       <span className={cn('block text-lg font-mono truncate', color)}>{value}</span>
       {sub && <span className="block text-xs text-slate-500 mt-0.5 truncate">{sub}</span>}
-      {delta && <span className="block text-xs font-mono mt-0.5">{delta}</span>}
     </button>
   );
 }

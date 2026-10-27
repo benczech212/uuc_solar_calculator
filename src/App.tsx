@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useDeferredValue } from 'react';
-import { Sun, Download, Zap, Leaf, BarChart2, Activity, Calculator, ShieldAlert, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, FileText, User as UserIcon, Loader2, Copy, Check, Trash2, HelpCircle } from 'lucide-react';
+import { Sun, Download, Zap, Leaf, BarChart2, Activity, Calculator, ShieldAlert, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, FileText, User as UserIcon, Loader2, Copy, Check, Trash2, HelpCircle, Columns3 } from 'lucide-react';
 import { RoiChart } from './components/Chart';
 import { SensitivityChart } from './components/SensitivityChart';
 import { Equations } from './components/Equations';
@@ -13,7 +13,9 @@ import { EnergyReduction } from './components/EnergyReduction';
 import { ProgressTracker } from './components/ProgressTracker';
 import { PdfReport } from './components/PdfReport';
 import { ExecutiveSummary } from './components/ExecutiveSummary';
-import { InputsPanel, VendorQuote, SectionKey, CompareKey } from './components/InputsPanel';
+import { InputsPanel, VendorQuote, SectionKey } from './components/InputsPanel';
+import { ScenarioManager, ScenarioCompare } from './components/Scenarios';
+import { Scenario, Compared, loadScenarios, storeScenarios, SCENARIO_COLORS, CURRENT_COLOR } from './scenarios';
 import { ResultsSummary } from './components/ResultsSummary';
 import { Segmented, Modal, cn, btn } from './components/ui';
 import { GoalPicker, GoalSuggestions } from './components/GoalPanel';
@@ -109,24 +111,17 @@ const getInitialDefaults = (): SolarParams => {
   return DEFAULT_PARAMS;
 };
 
-type ChartTab = 'timeline' | 'sensitivity' | 'compare' | 'renewability' | 'outage' | 'equations';
+type ChartTab = 'timeline' | 'scenarios' | 'sensitivity' | 'compare' | 'renewability' | 'outage' | 'equations';
 
 const CHART_TABS: { key: ChartTab; label: string; icon: React.ReactNode; blurb: string }[] = [
   { key: 'timeline', label: 'Savings over time', icon: <Activity className="w-4 h-4" />, blurb: 'Does it pay off, and when?' },
+  { key: 'scenarios', label: 'Compare', icon: <Columns3 className="w-4 h-4" />, blurb: 'How do our saved scenarios stack up?' },
   { key: 'sensitivity', label: 'What if…', icon: <BarChart2 className="w-4 h-4" />, blurb: 'What changes if we adjust one setting?' },
   { key: 'compare', label: 'Monthly balance', icon: <GitCompare className="w-4 h-4" />, blurb: 'Does solar keep up with our use each month?' },
   { key: 'renewability', label: 'Energy mix', icon: <Leaf className="w-4 h-4" />, blurb: 'How clean is our electricity, before and after?' },
   { key: 'outage', label: 'Outage backup', icon: <ShieldAlert className="w-4 h-4" />, blurb: 'Could we keep the lights on in a long outage?' },
   { key: 'equations', label: 'Formulas', icon: <Calculator className="w-4 h-4" />, blurb: 'How is each number worked out?' },
 ];
-
-const SECTION_NAMES: Record<CompareKey, { flag: keyof SolarParams; name: string }> = {
-  efficiency: { flag: 'hasSolarEfficiency', name: 'the production adjustment' },
-  maintenance: { flag: 'hasMaintenance', name: 'maintenance' },
-  storage: { flag: 'hasBattery', name: 'a battery' },
-  incentives: { flag: 'hasIncentives', name: 'tax credits' },
-  financing: { flag: 'isFinanced', name: 'a loan' },
-};
 
 export default function App() {
   const [params, setParams] = useState<SolarParams>(getInitialDefaults());
@@ -135,7 +130,8 @@ export default function App() {
 
   const [confirmSave, setConfirmSave] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [comparisonMode, setComparisonMode] = useState<CompareKey | null>(null);
+  const [scenarios, setScenariosState] = useState<Scenario[]>(loadScenarios);
+  const setScenarios = (fn: (prev: Scenario[]) => Scenario[]) => setScenariosState(prev => { const next = fn(prev); storeScenarios(next); return next; });
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -346,22 +342,44 @@ export default function App() {
     { target: 'goal-picker', title: 'Pick what matters most', body: 'Most money saved, best return, fastest payback, lowest carbon or least cash up front. Every input then shows how raising it moves that goal (green helps, red hurts), and the results suggest the changes that help most.' },
     { target: 'section-quotes', title: 'Start from a real quote', body: 'These are the bids UUC received. Pick one, or set the system size and price yourself in step 2.', before: () => setSectionsOpen(prev => ({ ...prev, quotes: true })) },
     { target: 'section-energy', title: 'Electricity use and rates', body: 'UUC’s own bills are already loaded, month by month. The rate is the all-in price per kWh from those bills.', before: () => setSectionsOpen(prev => ({ ...prev, energy: true })) },
-    { target: 'section-incentives', title: 'Switch on what applies', body: 'Tax credits, a loan, a battery, maintenance. “Compare” shows the results with and without that option side by side.' },
+    { target: 'section-incentives', title: 'Switch on what applies', body: 'Tax credits, a loan, a battery, maintenance. Each has its own switch, so you can try it with and without.' },
     { target: 'slider-utilityRate', title: 'Every input explains itself', body: 'Click the (i) next to any input to see what it means, why its default was picked and where the number came from.', before: () => setSectionsOpen(prev => ({ ...prev, energy: true })) },
     { target: 'results-summary', title: 'Results update instantly', body: 'Payback, savings and return change as you adjust anything. Click a number to see exactly how it’s worked out.' },
     { target: 'goal-suggestions', title: 'Suggestions for your goal', body: 'The calculator tries quotes, system sizes, loan options and a battery, and lists the ones that most improve your goal. Apply one with a click, and undo it if you change your mind.' },
-    { target: 'chart-tabs', title: 'Look deeper', body: 'Savings over time, what-if scenarios, month-by-month balance, energy mix, outage backup and every formula.' },
+    { target: 'scenarios', title: 'Save and compare scenarios', body: 'Save the current settings as a scenario, change something (another quote, a loan, a battery), save again, and tick the ones to compare. The Compare tab lines them up on one chart and spells out the differences.' },
+    { target: 'chart-tabs', title: 'Look deeper', body: 'Savings over time, scenario comparison, what-if, month-by-month balance, energy mix, outage backup and every formula.' },
     { target: 'saved-setups', title: 'Save and share', body: 'Sign in with Google to save a setup and share a link to it. That’s the tour; enjoy exploring.' },
   ];
 
-  const compareResults = useMemo(() => {
-    if (!comparisonMode) return null;
-    const flag = SECTION_NAMES[comparisonMode].flag;
-    return calculateRoi({ ...effectiveParams, [flag]: !effectiveParams[flag] });
-  }, [effectiveParams, comparisonMode]);
-  const compareLabel = comparisonMode
-    ? `${params[SECTION_NAMES[comparisonMode].flag] ? 'without' : 'with'} ${SECTION_NAMES[comparisonMode].name}`
-    : undefined;
+  // Scenarios: colours by position among the ticked ones, results worked out once each.
+  const scenarioColors = useMemo(() => {
+    const out: Record<string, string> = {};
+    scenarios.filter(sc => sc.compare).forEach((sc, i) => { out[sc.id] = SCENARIO_COLORS[i % SCENARIO_COLORS.length]; });
+    return out;
+  }, [scenarios]);
+  const currentCompared: Compared = { name: 'Current setup', color: CURRENT_COLOR, params: effectiveParams, results };
+  const comparedScenarios: Compared[] = useMemo(() => scenarios.filter(sc => sc.compare).map(sc => {
+    const p = { ...DEFAULT_PARAMS, ...sc.params, reductionProjects: sc.params.useReducedEnergyProfile ? reductionProjects : undefined };
+    return { name: sc.name, color: scenarioColors[sc.id], params: p, results: calculateRoi(p) };
+  }), [scenarios, scenarioColors, reductionProjects]);
+
+  const saveScenario = () => {
+    setScenarios(prev => {
+      const used = new Set(prev.map(sc => sc.name));
+      let n = prev.length + 1;
+      while (used.has(`Scenario ${n}`)) n++;
+      const ticked = prev.filter(sc => sc.compare).length;
+      return [...prev, { id: `${Date.now()}`, name: vendorName ? `Scenario ${n} (${vendorName})` : `Scenario ${n}`, params, compare: ticked < 4, createdAt: Date.now() }];
+    });
+  };
+  const toggleScenario = (id: string) => {
+    setScenarios(prev => {
+      const target = prev.find(sc => sc.id === id);
+      if (target && !target.compare && prev.filter(sc => sc.compare).length >= 4) return prev;
+      return prev.map(sc => sc.id === id ? { ...sc, compare: !sc.compare } : sc);
+    });
+    setActiveTab('scenarios');
+  };
 
   // Only offer "what if" variables for features that are switched on.
   const sensitivityOptions: { value: SensitivityVariable; label: string }[] = [
@@ -472,8 +490,6 @@ export default function App() {
                   applyQuote={applyQuote}
                   sectionsOpen={sectionsOpen}
                   toggleSection={toggleSection}
-                  comparisonMode={comparisonMode}
-                  toggleCompare={(k) => setComparisonMode(m => m === k ? null : k)}
                   onOpenBills={() => setAppScreen('progress')}
                 />
                 </TrackContext.Provider>
@@ -579,9 +595,6 @@ export default function App() {
                 ) : (
                   <ResultsSummary
                     results={results}
-                    compare={compareResults}
-                    compareLabel={compareLabel}
-                    onClearCompare={() => setComparisonMode(null)}
                     onExplain={(k) => navigateToEquation(k)}
                     sellBackRate={params.sellBackRate}
                     financed={params.isFinanced}
@@ -597,6 +610,16 @@ export default function App() {
                   onApply={applySuggestion}
                   lastApplied={undo?.title}
                   onUndo={undo ? () => { setParams(undo.params); setUndo(null); } : undefined}
+                />
+
+                <ScenarioManager
+                  scenarios={scenarios}
+                  colors={scenarioColors}
+                  onSave={saveScenario}
+                  onToggle={toggleScenario}
+                  onRename={(id, name) => setScenarios(prev => prev.map(sc => sc.id === id ? { ...sc, name } : sc))}
+                  onLoad={(id) => { const sc = scenarios.find(x => x.id === id); if (sc) setParams({ ...DEFAULT_PARAMS, ...sc.params }); }}
+                  onDelete={(id) => setScenarios(prev => prev.filter(sc => sc.id !== id))}
                 />
 
                 <div ref={chartRef} className="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 sm:p-5 scroll-mt-24">
@@ -648,7 +671,7 @@ export default function App() {
 
                   <div className="min-h-[300px]">
                     {activeTab === 'timeline' ? (
-                      <RoiChart data={results.chartData} paybackPeriod={results.paybackPeriod} compareData={compareResults?.chartData} comparePaybackPeriod={compareResults?.paybackPeriod} />
+                      <RoiChart data={results.chartData} paybackPeriod={results.paybackPeriod} />
                     ) : activeTab === 'sensitivity' ? (
                       <SensitivityChart
                         data={sensitivityData}
@@ -667,6 +690,8 @@ export default function App() {
                       <OutageChart data={results.outageResilience} onEnableBattery={enableBattery} />
                     ) : activeTab === 'compare' ? (
                       <MonthlyBalanceChart data={results.monthlyEnergyData} results={results} />
+                    ) : activeTab === 'scenarios' ? (
+                      <ScenarioCompare current={currentCompared} others={comparedScenarios} goal={goal} />
                     ) : activeTab === 'renewability' ? (
                       <RenewabilityChart data={results.monthlyEnergyData} gridRenewablePercent={params.gridRenewablePercentage} />
                     ) : (
@@ -729,7 +754,7 @@ export default function App() {
             </div>
           </div>
           <div className="flex-1 overflow-auto bg-slate-950 p-4 sm:p-8 flex justify-center preview-container">
-            <PdfReport params={effectiveParams} results={results} vendorName={vendorName} isHidden={false} />
+            <PdfReport params={effectiveParams} results={results} vendorName={vendorName} goal={goal} suggestions={suggestions} current={currentCompared} scenarios={comparedScenarios} />
           </div>
         </div>
       )}
