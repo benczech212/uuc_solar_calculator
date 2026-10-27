@@ -77,43 +77,25 @@ export function improvement(goal: Goal, before: number, after: number) {
   return goal.higherIsBetter ? after - before : before - after;
 }
 
-// One step up for each slider, used for "raising this by X would…" hints.
-export const LEVER_STEPS: Record<string, { step: number; unit: (s: number) => string; when?: (p: SolarParams) => boolean }> = {
-  panelWattage: { step: 25, unit: (s) => `${s} W`, when: (p) => p.inputMode === 'detailed' },
-  numberOfPanels: { step: 10, unit: (s) => `${s} panels`, when: (p) => p.inputMode === 'detailed' },
-  costPerWatt: { step: 0.1, unit: (s) => `$${s.toFixed(2)}/W`, when: (p) => p.inputMode === 'detailed' },
-  totalSystemSizeKw: { step: 5, unit: (s) => `${s} kW`, when: (p) => p.inputMode === 'total' },
-  totalGrossCost: { step: 10000, unit: (s) => formatCurrency(s), when: (p) => p.inputMode === 'total' },
-  monthlyUsageKwh: { step: 500, unit: (s) => `${s} kWh`, when: (p) => p.usageMode === 'flat' },
-  utilityRate: { step: 0.01, unit: (s) => `$${s.toFixed(2)}`, when: (p) => p.usageMode !== 'historical' },
-  sellBackRate: { step: 0.01, unit: (s) => `$${s.toFixed(2)}`, when: (p) => !p.hasLinkedSellBackRate },
-  annualBillIncrease: { step: 1, unit: (s) => `${s} pt`, when: () => true },
-  gridRenewablePercentage: { step: 10, unit: (s) => `${s} pts`, when: () => true },
-  federalTaxCreditPercent: { step: 5, unit: (s) => `${s} pts`, when: (p) => p.hasIncentives },
-  stateRebateAmount: { step: 5000, unit: (s) => formatCurrency(s), when: (p) => p.hasIncentives },
-  downPayment: { step: 10000, unit: (s) => formatCurrency(s), when: (p) => p.isFinanced },
-  loanTermYears: { step: 5, unit: (s) => `${s} yrs`, when: (p) => p.isFinanced },
-  loanInterestRate: { step: 1, unit: (s) => `${s} pt`, when: (p) => p.isFinanced },
-  batteryCapacityKwh: { step: 10, unit: (s) => `${s} kWh`, when: (p) => p.hasBattery },
-  batteryCostPerKwh: { step: 100, unit: (s) => `$${s}`, when: (p) => p.hasBattery },
-  annualMaintenanceCost: { step: 250, unit: (s) => formatCurrency(s), when: (p) => p.hasMaintenance },
-  solarEfficiency: { step: 10, unit: (s) => `${s} pts`, when: (p) => p.hasSolarEfficiency && p.efficiencyMode === 'flat' },
-};
+// Slider tracks: sample the goal across a slider's whole range so the track can be painted
+// greener where moving there improves the goal and redder where it hurts.
+export const TRACK_SAMPLES = 17;
 
-export interface Impact { text: string; tone: 'good' | 'bad' | 'neutral' }
+// The size of change that paints a track at full strength, per goal.
+export const TRACK_SCALE: Record<GoalKey, number> = { savings: 100000, roi: 100, payback: 3, co2: 10, upfront: 50000 };
 
-export function leverImpacts(p: SolarParams, goal: Goal): Record<string, Impact> {
-  const base = goal.value(calculateRoi(p), p);
-  const out: Record<string, Impact> = {};
-  for (const [key, l] of Object.entries(LEVER_STEPS)) {
-    if (l.when && !l.when(p)) continue;
-    const next = withParams(p, { [key]: (p[key as keyof SolarParams] as number) + l.step } as Partial<SolarParams>);
-    const after = goal.value(calculateRoi(next), next);
-    const gain = improvement(goal, base, after);
-    const tiny = Math.abs(after - base) < (goal.key === 'payback' || goal.key === 'co2' ? 0.05 : goal.key === 'roi' ? 0.5 : 50);
-    out[key] = tiny
-      ? { text: `+${l.unit(l.step)}: no real change to ${goal.short}`, tone: 'neutral' }
-      : { text: `+${l.unit(l.step)}: ${goal.formatDelta(after - base)} ${goal.short}`, tone: gain > 0 ? 'good' : 'bad' };
+const WHOLE_NUMBERS = new Set(['numberOfPanels', 'loanTermYears', 'batteryCapacityKwh']);
+
+export interface TrackRequest { key: string; min: number; max: number }
+
+// Gain (positive = better for the goal) at each sample point, relative to the current setting.
+export function sliderTrack(p: SolarParams, goal: Goal, req: TrackRequest, base = goal.value(calculateRoi(p), p)): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < TRACK_SAMPLES; i++) {
+    let v = req.min + ((req.max - req.min) * i) / (TRACK_SAMPLES - 1);
+    if (WHOLE_NUMBERS.has(req.key)) v = Math.round(v);
+    const next = withParams(p, { [req.key]: v } as Partial<SolarParams>);
+    out.push(improvement(goal, base, goal.value(calculateRoi(next), next)));
   }
   return out;
 }
