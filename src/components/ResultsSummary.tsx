@@ -11,6 +11,7 @@ interface ResultsSummaryProps {
   onClearCompare: () => void;
   onExplain: (key: string, e?: React.MouseEvent) => void;
   sellBackRate: number;
+  financed?: boolean;
 }
 
 // "+$1,200 vs. other" in green when it is better, red when worse.
@@ -21,7 +22,7 @@ function Delta({ now, other, fmt, higherIsBetter = true }: { now: number; other:
   return <span className={better ? 'text-emerald-400' : 'text-rose-400'}>{diff > 0 ? '+' : '−'}{fmt(Math.abs(diff))} vs. other</span>;
 }
 
-export function ResultsSummary({ results, compare, compareLabel, onClearCompare, onExplain, sellBackRate }: ResultsSummaryProps) {
+export function ResultsSummary({ results, compare, compareLabel, onClearCompare, onExplain, sellBackRate, financed }: ResultsSummaryProps) {
   const paysBack = results.paybackPeriod > 0 && results.paybackPeriod <= 25;
   const kwh = (v: number) => `${Math.round(v).toLocaleString()} kWh`;
 
@@ -37,7 +38,7 @@ export function ResultsSummary({ results, compare, compareLabel, onClearCompare,
       <div className="flex flex-wrap items-end justify-between gap-4">
         <button type="button" onClick={(e) => onExplain(paysBack ? 'payback' : 'projection', e)} className="text-left group" title="See how this is calculated">
           <span className="flex items-center gap-2 text-sm text-amber-400 font-semibold">
-            <TrendingUp className="w-4 h-4" /> {paysBack ? 'Pays for itself in' : 'Over 25 years'}
+            <TrendingUp className="w-4 h-4" /> {paysBack ? (financed ? 'Savings pass loan payments in' : 'Pays for itself in') : 'Over 25 years'}
           </span>
           {paysBack ? (
             <span className="flex items-baseline gap-2">

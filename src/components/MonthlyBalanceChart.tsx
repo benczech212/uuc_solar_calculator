@@ -1,248 +1,105 @@
 import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Table } from 'lucide-react';
 import { RoiResults } from '../types';
-import { formatCurrency } from '../utils';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell, 
-  ReferenceLine 
-} from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Info, Table } from 'lucide-react';
+import { C, axisProps, tooltipStyle, compactKwh, Facts, Legend, Note } from './chartTheme';
 
 interface MonthlyBalanceChartProps {
   data: RoiResults['monthlyEnergyData'];
   results: RoiResults;
 }
 
+const kwh = (v: number) => `${Math.round(v).toLocaleString()} kWh`;
+
+// Monthly balance: solar made next to electricity used, for each month.
 export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps) {
   const [showTable, setShowTable] = useState(false);
 
-  // Prepare and calculate monthly balance data
-  const chartData = data.map(m => {
-    // Falls back to direct calculation if not explicitly stored
-    const gen = m.generation !== undefined ? m.generation : results.annualGeneration / 12;
-    const use = m.usage !== undefined ? m.usage : (m.solarConsumed + m.gridRenewable + m.gridNonRenewable);
-    const balance = gen - use;
-    return {
-      month: m.monthName,
-      generation: Math.round(gen),
-      usage: Math.round(use),
-      balance: Math.round(balance),
-    };
+  const rows = data.map(m => {
+    const solar = m.generation ?? results.annualGeneration / 12;
+    const use = m.usage ?? (m.solarConsumed + m.gridRenewable + m.gridNonRenewable);
+    return { month: m.monthName, solar: Math.round(solar), use: Math.round(use), balance: Math.round(solar - use) };
   });
+  if (rows.length === 0) return <p className="text-sm text-slate-500 py-12 text-center">No monthly data to show yet.</p>;
 
-  // Calculate high-level summary statistics
-  const totalAnnualOverage = chartData.reduce((acc, curr) => acc + (curr.balance > 0 ? curr.balance : 0), 0);
-  const totalAnnualShortage = chartData.reduce((acc, curr) => acc + (curr.balance < 0 ? Math.abs(curr.balance) : 0), 0);
-  
-  const bestMonth = [...chartData].sort((a, b) => b.balance - a.balance)[0];
-  const worstMonth = [...chartData].sort((a, b) => a.balance - b.balance)[0];
-
-  if (!bestMonth || !worstMonth) {
-    return <p className="text-sm text-slate-500 py-12 text-center">No monthly data to show yet.</p>;
-  }
-
-  const netAnnualBalance = results.annualGeneration - results.annualUsage;
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const dataPoint = payload[0].payload;
-      const isOverage = dataPoint.balance >= 0;
-      return (
-        <div className="bg-slate-900 border border-slate-700/60 p-3.5 rounded-xl shadow-xl font-mono text-xs text-slate-300">
-          <p className="text-slate-100 font-bold mb-2 uppercase tracking-wider">{dataPoint.month} Energy Profile</p>
-          <div className="space-y-1">
-            <div className="flex justify-between gap-6">
-              <span className="text-slate-400">Solar Generation:</span>
-              <span className="text-amber-400 font-semibold">{dataPoint.generation.toLocaleString()} kWh</span>
-            </div>
-            <div className="flex justify-between gap-6">
-              <span className="text-slate-400">Grid/Building Usage:</span>
-              <span className="text-sky-400 font-semibold">{dataPoint.usage.toLocaleString()} kWh</span>
-            </div>
-            <div className="border-t border-slate-800/80 my-1.5" />
-            <div className="flex justify-between gap-6">
-              <span className="text-slate-400">Net Balance:</span>
-              <span className={`font-bold ${isOverage ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {isOverage ? '+' : ''}{dataPoint.balance.toLocaleString()} kWh
-                {isOverage ? ' (Surplus)' : ' (Shortage)'}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
+  const totalSolar = rows.reduce((a, r) => a + r.solar, 0);
+  const totalUse = rows.reduce((a, r) => a + r.use, 0);
+  const surplusMonths = rows.filter(r => r.balance > 0);
+  const worst = rows.reduce((a, r) => (r.balance < a.balance ? r : a));
+  const coverage = totalUse > 0 ? (totalSolar / totalUse) * 100 : 0;
 
   return (
-    <div className="w-full text-slate-300 space-y-6 mt-4">
-      {/* Visual Analytics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Metric 1: Annual Overview */}
-        <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Net Annual Balance</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-xl font-mono font-bold ${netAnnualBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {netAnnualBalance >= 0 ? '+' : ''}{netAnnualBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </span>
-              <span className="text-xs text-slate-500 font-sans">kWh</span>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 font-sans mt-3">
-            {netAnnualBalance >= 0 
-              ? "Your solar array is net-positive across the full annual cycle." 
-              : "Building loads exceed total annual solar electricity generation."}
-          </p>
-        </div>
+    <div>
+      <Facts items={[
+        { label: 'Solar covers', value: `${Math.round(coverage)}%`, tone: coverage >= 100 ? 'good' : 'sun', note: `of the year’s use (${compactKwh(totalSolar)} of ${compactKwh(totalUse)} kWh)` },
+        { label: 'Months with extra solar', value: `${surplusMonths.length} of 12`, tone: surplusMonths.length ? 'good' : 'default', note: surplusMonths.length ? surplusMonths.map(r => r.month).join(', ') : 'none' },
+        { label: 'Biggest shortfall', value: worst.balance < 0 ? kwh(-worst.balance) : 'none', tone: worst.balance < 0 ? 'bad' : 'good', note: worst.balance < 0 ? `in ${worst.month}, bought from the grid` : 'solar covers every month' },
+      ]} />
 
-        {/* Metric 2: Peak Surplus Month */}
-        <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Peak Monthly Surplus</span>
-              <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xl font-mono font-bold text-emerald-400">
-                {bestMonth.balance > 0 ? '+' : ''}{bestMonth.balance.toLocaleString()}
-              </span>
-              <span className="text-xs text-emerald-500/70 font-sans">kWh ({bestMonth.month})</span>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 font-sans mt-3">
-            Solar generation peak. Maximizes sold energy exports back to the grid.
-          </p>
-        </div>
-
-        {/* Metric 3: Deepest Shortage Month */}
-        <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Max Monthly Deficit</span>
-              <ArrowDownRight className="w-4 h-4 text-rose-400" />
-            </div>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xl font-mono font-bold text-rose-400">
-                {worstMonth.balance.toLocaleString()}
-              </span>
-              <span className="text-xs text-rose-500/70 font-sans">kWh ({worstMonth.month})</span>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 font-sans mt-3">
-            Winter solar minimum or peak cooling usage triggers grid draw dependence.
-          </p>
-        </div>
+      <div className="h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 8, right: 8, left: 4, bottom: 0 }} barGap={2}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.grid} />
+            <XAxis {...axisProps} dataKey="month" interval={0} />
+            <YAxis {...axisProps} tickFormatter={compactKwh} width={44} />
+            <Tooltip
+              {...tooltipStyle}
+              cursor={{ fill: '#1e293b66' }}
+              formatter={(v: number, name: string) => [kwh(v), name === 'solar' ? 'Solar made' : 'Electricity used']}
+              labelFormatter={(l, p) => {
+                const r = p?.[0]?.payload as typeof rows[number] | undefined;
+                return r ? `${l}: ${r.balance >= 0 ? `${kwh(r.balance)} extra` : `${kwh(-r.balance)} short`}` : l;
+              }}
+            />
+            <Bar dataKey="use" name="use" fill={C.use} radius={[3, 3, 0, 0]} maxBarSize={22} />
+            <Bar dataKey="solar" name="solar" fill={C.solar} radius={[3, 3, 0, 0]} maxBarSize={22} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
+      <Legend items={[{ color: C.use, label: 'Electricity used' }, { color: C.solar, label: 'Solar made' }]} />
+      <Note>
+        In months where solar makes more than UUC uses, the extra goes to the grid as a credit for later months.
+        Shortfall months are covered by grid power and those credits.
+      </Note>
 
-      {/* Main Bar Chart */}
-      <div className="bg-slate-950/30 p-5 rounded-xl border border-slate-900 shadow-inner relative">
-        <h4 className="text-xs uppercase tracking-widest font-mono text-slate-400 mb-6 flex items-center justify-between">
-          <span>Projected Monthly Balance Net Profile (kWh)</span>
-          <span className="text-[11px] text-slate-500 flex items-center gap-1 font-sans">
-            <Info className="w-3.5 h-3.5" /> Hover bars to inspect exact details
-          </span>
-        </h4>
-        
-        <div className="w-full h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 10, right: 10, bottom: 20, left: 10 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-              <XAxis 
-                dataKey="month" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}
-                tickFormatter={(val) => `${val > 0 ? '+' : ''}${val}`}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e293b', opacity: 0.2 }} />
-              <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
-              <Bar dataKey="balance">
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.balance >= 0 ? 'url(#greenGlow)' : 'url(#redGlow)'} 
-                  />
-                ))}
-              </Bar>
-
-              {/* Define gradients for beautiful neon glows in dark mode */}
-              <defs>
-                <linearGradient id="greenGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.85} />
-                  <stop offset="100%" stopColor="#059669" stopOpacity={0.25} />
-                </linearGradient>
-                <linearGradient id="redGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.85} />
-                  <stop offset="100%" stopColor="#e11d48" stopOpacity={0.25} />
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Legend */}
-        <div className="flex gap-6 justify-center text-xs font-mono mt-2 pt-4 border-t border-slate-900/80">
-          <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-gradient-to-b from-[#10b981] to-[#059669] border border-emerald-500/30" />
-            <span className="text-emerald-400">Net Surplus / Overage (kWh)</span>
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-gradient-to-b from-[#f43f5e] to-[#e11d48] border border-rose-500/30" />
-            <span className="text-rose-400">Net Deficit / Shortage (kWh)</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Toggle Table Data */}
-      <div className="flex justify-end pr-1">
+      <div className="flex justify-end mt-3">
         <button
-          onClick={() => setShowTable(!showTable)}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-mono border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900/90 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+          type="button"
+          onClick={() => setShowTable(s => !s)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500"
         >
-          <Table className="w-4 h-4 text-amber-500/70" />
-          <span>{showTable ? 'Hide Tabular Log' : 'Show Monthly Numbers'}</span>
+          <Table className="w-4 h-4" /> {showTable ? 'Hide numbers' : 'Show the numbers'}
         </button>
       </div>
-
       {showTable && (
-        <div className="bg-slate-950/40 border border-slate-900 rounded-xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-900 bg-slate-950 text-slate-400">
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px]">Month</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-amber-500">Generation</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-sky-400">Usage</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-slate-300">Net Balance</th>
+        <div className="mt-3 overflow-x-auto border border-slate-800 rounded-lg">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-950 text-slate-400 text-xs">
+              <tr>
+                <th className="text-left font-medium py-2 px-3">Month</th>
+                <th className="text-right font-medium py-2 px-3">Used</th>
+                <th className="text-right font-medium py-2 px-3">Solar</th>
+                <th className="text-right font-medium py-2 px-3">Difference</th>
               </tr>
             </thead>
-            <tbody>
-              {chartData.map((row, i) => (
-                <tr key={i} className="border-b border-slate-900/40 hover:bg-slate-900/30">
-                  <td className="py-2.5 px-4 text-slate-300 font-semibold">{row.month}</td>
-                  <td className="py-2.5 px-4 text-amber-400">{row.generation.toLocaleString()} kWh</td>
-                  <td className="py-2.5 px-4 text-sky-400">{row.usage.toLocaleString()} kWh</td>
-                  <td className={`py-2.5 px-4 font-bold ${row.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {row.balance >= 0 ? '+' : ''}{row.balance.toLocaleString()} kWh
-                  </td>
+            <tbody className="font-mono">
+              {rows.map(r => (
+                <tr key={r.month} className="border-t border-slate-800/60">
+                  <td className="py-1.5 px-3 font-sans text-slate-300">{r.month}</td>
+                  <td className="py-1.5 px-3 text-right text-sky-300">{r.use.toLocaleString()}</td>
+                  <td className="py-1.5 px-3 text-right text-amber-300">{r.solar.toLocaleString()}</td>
+                  <td className={`py-1.5 px-3 text-right ${r.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{r.balance > 0 ? '+' : ''}{r.balance.toLocaleString()}</td>
                 </tr>
               ))}
+              <tr className="border-t border-slate-700 font-semibold">
+                <td className="py-1.5 px-3 font-sans text-slate-200">Year</td>
+                <td className="py-1.5 px-3 text-right text-sky-300">{totalUse.toLocaleString()}</td>
+                <td className="py-1.5 px-3 text-right text-amber-300">{totalSolar.toLocaleString()}</td>
+                <td className={`py-1.5 px-3 text-right ${totalSolar >= totalUse ? 'text-emerald-400' : 'text-rose-400'}`}>{totalSolar - totalUse > 0 ? '+' : ''}{(totalSolar - totalUse).toLocaleString()}</td>
+              </tr>
             </tbody>
           </table>
+          <p className="text-xs text-slate-500 px-3 py-2">All figures in kWh.</p>
         </div>
       )}
     </div>
