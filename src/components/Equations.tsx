@@ -59,7 +59,7 @@ interface Item {
 
 function Card({ item, open, highlighted, onToggle, printMode }: { item: Item; open: boolean; highlighted: boolean; onToggle: () => void; printMode?: boolean }) {
   return (
-    <div id={`eq-${item.key}`} className={cn('rounded-xl border transition-all duration-500 scroll-mt-24',
+    <div id={`eq-${item.key}`} data-pdf-row className={cn('rounded-xl border transition-all duration-500 scroll-mt-24',
       highlighted ? 'border-amber-500 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-slate-800 bg-slate-950/30',
       printMode && 'page-break-inside-avoid')}>
       <button type="button" onClick={onToggle} disabled={printMode} className="w-full flex items-start gap-2 text-left px-4 py-3">

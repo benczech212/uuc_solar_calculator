@@ -14,7 +14,7 @@ export interface VendorQuote {
 }
 
 export type SectionKey = 'quotes' | 'system' | 'efficiency' | 'energy' | 'maintenance' | 'storage' | 'incentives' | 'financing';
-export type CompareKey = 'efficiency' | 'maintenance' | 'storage' | 'incentives' | 'financing';
+type OptionalKey = 'efficiency' | 'maintenance' | 'storage' | 'incentives' | 'financing';
 
 interface InputsPanelProps {
   params: SolarParams;
@@ -24,8 +24,6 @@ interface InputsPanelProps {
   applyQuote: (q: VendorQuote) => void;
   sectionsOpen: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey) => void;
-  comparisonMode: CompareKey | null;
-  toggleCompare: (key: CompareKey) => void;
   onOpenBills: () => void;
 }
 
@@ -110,14 +108,12 @@ function LumpSums({ params, updateParam }: Pick<InputsPanelProps, 'params' | 'up
 }
 
 export function InputsPanel(props: InputsPanelProps) {
-  const { params, results, quotes, updateParam, applyQuote, sectionsOpen, toggleSection, comparisonMode, toggleCompare, onOpenBills } = props;
-  const optional = (key: CompareKey, flag: keyof SolarParams) => ({
+  const { params, results, quotes, updateParam, applyQuote, sectionsOpen, toggleSection, onOpenBills } = props;
+  const optional = (key: OptionalKey, flag: keyof SolarParams) => ({
     open: sectionsOpen[key],
     onToggleOpen: () => toggleSection(key),
     enabled: !!params[flag],
     onToggleEnabled: (v: boolean) => updateParam(flag, v),
-    comparing: comparisonMode === key,
-    onCompare: () => toggleCompare(key),
   });
 
   return (
