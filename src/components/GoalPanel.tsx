@@ -1,10 +1,7 @@
 import React from 'react';
 import { Target, Sparkles } from 'lucide-react';
-import { GOALS, Goal, GoalKey, Impact, Suggestion } from '../goals';
+import { GOALS, Goal, GoalKey, Suggestion } from '../goals';
 import { cn, btn } from './ui';
-
-// Each slider looks up its own "what raising this does to your goal" hint here.
-export const ImpactContext = React.createContext<Record<string, Impact>>({});
 
 export function GoalPicker({ goal, onChange }: { goal: Goal; onChange: (k: GoalKey) => void }) {
   return (
@@ -23,17 +20,13 @@ export function GoalPicker({ goal, onChange }: { goal: Goal; onChange: (k: GoalK
           >{g.label}</button>
         ))}
       </div>
-      <p className="text-xs text-slate-400">{goal.description} Each input below shows how raising it changes this, and the results suggest changes that help most.</p>
+      <p className="text-xs text-slate-400">{goal.description} Slider tracks turn greener where moving the slider helps this and redder where it hurts (stronger colour, bigger effect); hover a track for the exact change. The results also suggest the changes that help most.</p>
+      <div className="flex items-center gap-2 text-xs text-slate-500" aria-hidden>
+        <span>worse</span>
+        <span className="h-2 flex-1 max-w-48 rounded-full" style={{ background: 'linear-gradient(to right, rgb(244,63,94), rgb(51,65,85), rgb(16,185,129))' }} />
+        <span>better than now</span>
+      </div>
     </section>
-  );
-}
-
-export function ImpactHint({ impact }: { impact?: Impact }) {
-  if (!impact) return null;
-  return (
-    <p className={cn('text-xs', impact.tone === 'good' ? 'text-emerald-400' : impact.tone === 'bad' ? 'text-rose-400' : 'text-slate-500')}>
-      {impact.tone === 'good' ? '▲ ' : impact.tone === 'bad' ? '▼ ' : '• '}{impact.text}
-    </p>
   );
 }
 

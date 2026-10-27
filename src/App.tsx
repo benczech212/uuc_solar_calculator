@@ -16,9 +16,10 @@ import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { InputsPanel, VendorQuote, SectionKey, CompareKey } from './components/InputsPanel';
 import { ResultsSummary } from './components/ResultsSummary';
 import { Segmented, Modal, cn, btn } from './components/ui';
-import { GoalPicker, GoalSuggestions, ImpactContext } from './components/GoalPanel';
+import { GoalPicker, GoalSuggestions } from './components/GoalPanel';
+import { TrackContext, useGoalTracks } from './components/goalTracks';
 import { Tour, TourStep, shouldAutoStartTour } from './components/Tour';
-import { GoalKey, goalByKey, leverImpacts, suggest, withParams, Suggestion } from './goals';
+import { GoalKey, goalByKey, suggest, withParams, Suggestion } from './goals';
 import { exportToPDF } from './pdfExport';
 import { auth, signInWithGoogle, logout, saveConfiguration, updateConfiguration, getConfiguration, getUserConfigurations, SavedConfig } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -322,10 +323,10 @@ export default function App() {
 
   const results = useMemo(() => calculateRoi(effectiveParams), [effectiveParams]);
 
-  // Goal hints and suggestions re-run the model dozens of times, so they trail slightly
-  // behind fast slider drags instead of slowing them down.
+  // Suggestions re-run the model a few dozen times, so they trail slightly behind fast
+  // slider drags instead of slowing them down. Slider tracks are worked out in a worker.
   const deferredParams = useDeferredValue(effectiveParams);
-  const impacts = useMemo(() => leverImpacts(deferredParams, goal), [deferredParams, goal]);
+  const goalTracks = useGoalTracks(effectiveParams, goal);
   const suggestions = useMemo(() => suggest(deferredParams, goal, DEFAULT_QUOTES), [deferredParams, goal]);
   const goalNow = goal.value(results, effectiveParams);
 
@@ -462,7 +463,7 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-5 space-y-3">
                 <GoalPicker goal={goal} onChange={chooseGoal} />
-                <ImpactContext.Provider value={impacts}>
+                <TrackContext.Provider value={goalTracks}>
                 <InputsPanel
                   params={params}
                   results={results}
@@ -475,7 +476,7 @@ export default function App() {
                   toggleCompare={(k) => setComparisonMode(m => m === k ? null : k)}
                   onOpenBills={() => setAppScreen('progress')}
                 />
-                </ImpactContext.Provider>
+                </TrackContext.Provider>
 
                 <section id="saved-setups" className="border border-slate-800 rounded-xl bg-slate-900/40 p-4 space-y-3 scroll-mt-24">
                   <h2 className="text-sm font-semibold text-slate-100">Saved setups</h2>
@@ -714,7 +715,6 @@ export default function App() {
         </footer>
       </main>
 
-      <PdfReport params={effectiveParams} results={results} vendorName={vendorName} isHidden={true} />
       {showPdfPreview && (
         <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col">
           <div className="flex flex-wrap justify-between items-center gap-3 p-4 border-b border-slate-800 bg-slate-900 shrink-0">
