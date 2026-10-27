@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { SolarParams, RoiResults } from '../types';
 import { formatCurrency, SOLAR_YIELD_KWH_PER_KW, GRID_CO2_TONS_PER_KWH, HOME_ELECTRIC_CO2_TONS } from '../utils';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { cn } from './ui';
 
 interface EquationsProps {
   params: SolarParams;
@@ -13,6 +14,9 @@ interface EquationsProps {
   onNavigateToSlider?: (sliderId: string, sectionKey: string) => void;
 }
 
+type Nav = Pick<EquationsProps, 'onNavigateToEquation' | 'onNavigateToSlider'>;
+const NavCtx = React.createContext<Nav>({});
+
 interface VariableLinkProps {
   name: string;
   eqKey?: string;
@@ -22,287 +26,218 @@ interface VariableLinkProps {
   onNavigateToSlider?: (sliderId: string, sectionKey: string) => void;
 }
 
+// A term in a formula. Inputs (green) jump to their slider; results (amber) jump to their own formula.
 export function VariableLink({ name, eqKey, sliderId, sliderSection, onNavigateToEquation, onNavigateToSlider }: VariableLinkProps) {
+  const chip = 'inline-block align-baseline px-1.5 py-0.5 mx-0.5 rounded-md border text-[0.95em] font-sans transition-colors';
   if (eqKey && onNavigateToEquation) {
     return (
-      <button
-        onClick={() => onNavigateToEquation(eqKey)}
-        className="font-semibold text-amber-400 hover:text-amber-300 hover:underline cursor-pointer hover:bg-amber-400/10 px-1 py-0.5 rounded transition-all inline-block align-baseline text-left font-mono"
-        title={`Click to view formula for ${name}`}
-      >
-        {name}
-      </button>
+      <button type="button" onClick={() => onNavigateToEquation(eqKey)} title={`See how ${name.toLowerCase()} is worked out`}
+        className={cn(chip, 'border-amber-500/40 text-amber-300 hover:bg-amber-500/10')}>{name}</button>
     );
   }
-
   if (sliderId && sliderSection && onNavigateToSlider) {
     return (
-      <button
-        onClick={() => onNavigateToSlider(sliderId, sliderSection)}
-        className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer hover:bg-emerald-400/10 px-1 py-0.5 rounded transition-all inline-block align-baseline text-left font-mono"
-        title={`Click to adjust ${name} slider`}
-      >
-        {name}
-      </button>
+      <button type="button" onClick={() => onNavigateToSlider(sliderId, sliderSection)} title={`Go to the ${name.toLowerCase()} input`}
+        className={cn(chip, 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10')}>{name}</button>
     );
   }
-
-  return <span className="font-semibold text-slate-200">{name}</span>;
+  return <span className={cn(chip, 'border-slate-700 text-slate-200')}>{name}</span>;
 }
 
-export function Equations({ 
-  params, 
-  results, 
-  printMode, 
-  highlightedSection, 
-  onClearHighlight,
-  onNavigateToEquation,
-  onNavigateToSlider
-}: EquationsProps) {
-  const activeRate = results.effectiveUtilityRate !== undefined ? results.effectiveUtilityRate : params.utilityRate;
+function V({ name, eq, sld, sec }: { name: string; eq?: string; sld?: string; sec?: string }) {
+  const nav = useContext(NavCtx);
+  return <VariableLink name={name} eqKey={eq} sliderId={sld} sliderSection={sec} {...nav} />;
+}
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    cost: true,
-    net: true,
-    yearlygen: true,
-    yr1without: true,
-    yr1with: true,
-    gridsales: true,
-    exported_sold: true,
-    battery_utilization: true,
-    grid_purchase: true,
-    yr1savings: true,
-    projection: true,
-    cum_savings: true,
-    payback: true,
-    "25yr_roi": true,
-    renewable_mix: true,
-    co2: true,
-    co2homes: true
-  });
+interface Item {
+  key: string;
+  title: string;
+  plain: string;
+  formula: React.ReactNode;
+  result: React.ReactNode;
+}
 
-  const toggleSection = (key: string) => {
-    if (printMode) return;
-    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+function Card({ item, open, highlighted, onToggle, printMode }: { item: Item; open: boolean; highlighted: boolean; onToggle: () => void; printMode?: boolean }) {
+  return (
+    <div id={`eq-${item.key}`} className={cn('rounded-xl border transition-all duration-500 scroll-mt-24',
+      highlighted ? 'border-amber-500 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-slate-800 bg-slate-950/30',
+      printMode && 'page-break-inside-avoid')}>
+      <button type="button" onClick={onToggle} disabled={printMode} className="w-full flex items-start gap-2 text-left px-4 py-3">
+        {!printMode && <ChevronDown className={cn('w-4 h-4 mt-0.5 text-slate-500 transition-transform shrink-0', !open && '-rotate-90')} />}
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-slate-100">{item.title}</span>
+          <span className="block text-xs text-slate-400">{item.plain}</span>
+        </span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-2 text-sm">
+          <div className="text-slate-300 leading-loose">{item.formula}</div>
+          <div className="font-mono text-emerald-300 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2 leading-relaxed">{item.result}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Formulas: every calculation behind the results, in plain words, with the current numbers filled in.
+export function Equations({ params, results, printMode, highlightedSection, onClearHighlight, onNavigateToEquation, onNavigateToSlider }: EquationsProps) {
+  const rate = results.effectiveUtilityRate ?? params.utilityRate;
+  const usd = (v: number) => formatCurrency(v);
+  const kwh = (v: number) => `${Math.round(v).toLocaleString()} kWh`;
+  const billWithout = results.annualUsage * rate;
+  const billWith = results.annualGridPurchase * rate - results.annualGridSales * params.sellBackRate;
+  const credit = params.hasIncentives ? results.systemCost * (params.federalTaxCreditPercent / 100) + params.stateRebateAmount : 0;
+  const pays = results.paybackPeriod > 0 && results.paybackPeriod <= 25;
+
+  const groups: { title: string; items: Item[] }[] = [
+    {
+      title: 'What it costs',
+      items: [
+        {
+          key: 'cost', title: 'Price before credits', plain: 'The installed price of the panels, plus the battery if there is one.',
+          formula: <><V name="System size" sld={params.inputMode === 'detailed' ? 'slider-numberOfPanels' : 'slider-totalSystemSizeKw'} sec="system" /> × <V name="Price per watt" sld={params.inputMode === 'detailed' ? 'slider-costPerWatt' : 'slider-totalGrossCost'} sec="system" />{params.hasBattery && <> + <V name="Battery size" sld="slider-batteryCapacityKwh" sec="storage" /> × <V name="Battery cost" sld="slider-batteryCostPerKwh" sec="storage" /></>}</>,
+          result: <>{results.systemSizeKW.toFixed(1)} kW × ${(results.systemSizeKW > 0 ? (results.systemCost - (params.hasBattery ? params.batteryCapacityKwh * params.batteryCostPerKwh : 0)) / (results.systemSizeKW * 1000) : 0).toFixed(2)}/W{params.hasBattery && <> + {params.batteryCapacityKwh} kWh × ${params.batteryCostPerKwh}</>} = {usd(results.systemCost)}</>,
+        },
+        {
+          key: 'net', title: 'Cost after credits', plain: 'The price minus the federal credit and any rebate. Nonprofits get the federal credit as a payment from the IRS.',
+          formula: <><V name="Price before credits" eq="cost" />{params.hasIncentives ? <> − <V name="Federal credit %" sld="slider-federalTaxCreditPercent" sec="incentives" /> of the price − <V name="Rebate" sld="slider-stateRebateAmount" sec="incentives" /></> : <> (credits are switched off)</>}</>,
+          result: <>{usd(results.systemCost)}{params.hasIncentives && <> − {usd(credit)}</>} = {usd(results.netCost)}</>,
+        },
+      ],
+    },
+    {
+      title: 'Energy',
+      items: [
+        {
+          key: 'yearlygen', title: 'Solar made per year', plain: `Each kW of panels makes about ${SOLAR_YIELD_KWH_PER_KW.toLocaleString()} kWh a year around Tampa Bay, adjusted if you set a production change.`,
+          formula: <><V name="System size" sld={params.inputMode === 'detailed' ? 'slider-numberOfPanels' : 'slider-totalSystemSizeKw'} sec="system" /> × {SOLAR_YIELD_KWH_PER_KW.toLocaleString()} kWh{params.hasSolarEfficiency && <> × <V name="Output vs. typical" sld="slider-solarEfficiency" sec="efficiency" /></>}</>,
+          result: <>{results.systemSizeKW.toFixed(1)} kW × {SOLAR_YIELD_KWH_PER_KW.toLocaleString()}{params.hasSolarEfficiency && ` × ${params.efficiencyMode === 'monthly' ? 'monthly %' : `${params.solarEfficiency}%`}`} = {kwh(results.annualGeneration)} a year</>,
+        },
+        {
+          key: 'gridsales', title: 'Extra sent to the grid', plain: `Solar made beyond what the building uses at the time${params.hasBattery ? ' and beyond what the battery can store' : ''}, worked out month by month.`,
+          formula: <>Each month: <V name="Solar made" eq="yearlygen" /> − electricity used{params.hasBattery && <> − battery charging</>}, when positive</>,
+          result: <>{kwh(results.annualGridSales)} a year</>,
+        },
+        {
+          key: 'exported_sold', title: 'Value of power sent to the grid', plain: 'Duke credits extra solar at the sell-back rate.',
+          formula: <><V name="Extra sent to the grid" eq="gridsales" /> × <V name="Sell-back rate" sld="slider-sellBackRate" sec="energy" /></>,
+          result: <>{kwh(results.annualGridSales)} × ${params.sellBackRate.toFixed(2)} = {usd(results.annualGridSales * params.sellBackRate)} a year</>,
+        },
+        {
+          key: 'battery_utilization', title: 'Drawn from the battery', plain: 'Stored solar used later, instead of buying from the grid.',
+          formula: <>Limited by <V name="Battery size" sld="slider-batteryCapacityKwh" sec="storage" /> and the solar left over each day</>,
+          result: <>{kwh(results.annualBatteryDraw)} a year</>,
+        },
+        {
+          key: 'grid_purchase', title: 'Still bought from the grid', plain: 'Electricity the panels and battery can’t cover, mostly at night and in cloudy months.',
+          formula: <>Electricity used − solar used − <V name="Battery" eq="battery_utilization" /></>,
+          result: <>{kwh(results.annualGridPurchase)} a year, about {usd(results.annualGridPurchase * rate)} in year 1</>,
+        },
+      ],
+    },
+    {
+      title: 'Bills and savings',
+      items: [
+        {
+          key: 'yr1without', title: 'Year-1 bill without solar', plain: 'What UUC would pay for a year of electricity at today’s rate.',
+          formula: <>Electricity used × <V name="Electricity rate" sld="slider-utilityRate" sec="energy" /></>,
+          result: <>{kwh(results.annualUsage)} × ${rate.toFixed(3)} = {usd(billWithout)}</>,
+        },
+        {
+          key: 'yr1with', title: 'Year-1 bill with solar', plain: 'What’s still bought, minus credits for what’s sent back.',
+          formula: <>(<V name="Still bought" eq="grid_purchase" /> × <V name="Electricity rate" sld="slider-utilityRate" sec="energy" />) − (<V name="Sent to the grid" eq="gridsales" /> × <V name="Sell-back rate" sld="slider-sellBackRate" sec="energy" />)</>,
+          result: <>({kwh(results.annualGridPurchase)} × ${rate.toFixed(3)}) − ({kwh(results.annualGridSales)} × ${params.sellBackRate.toFixed(2)}) = {usd(billWith)}</>,
+        },
+        {
+          key: 'yr1savings', title: 'First-year savings', plain: 'The drop in the electric bill in year 1. Upkeep is counted separately, as a cost.',
+          formula: <><V name="Bill without solar" eq="yr1without" /> − <V name="Bill with solar" eq="yr1with" /></>,
+          result: <>{usd(billWithout)} − {usd(billWith)} = {usd(results.yearOneSavings)}</>,
+        },
+        {
+          key: 'projection', title: '25-year projection', plain: 'Each year the rate rises, so the yearly savings grow. Costs paid each year are added up alongside.',
+          formula: <>Each year: rate × (1 + <V name="Yearly rate increase" sld="slider-annualBillIncrease" sec="energy" />); savings = bill without − bill with. Paid so far = up-front payment or <V name="loan payments" sld="slider-loanTermYears" sec="financing" /> + <V name="upkeep" sld="slider-annualMaintenanceCost" sec="maintenance" /> − credits (received in year 2)</>,
+          result: <>25-year net savings (savings − paid) = {usd(results.total25YearSavings)}</>,
+        },
+        {
+          key: 'cum_savings', title: 'Savings to date', plain: 'The running total of bill savings, year after year.',
+          formula: <>Savings to date in year N = savings to date in year N−1 + savings in year N</>,
+          result: <>By year 25, net of costs: {usd(results.total25YearSavings)}</>,
+        },
+      ],
+    },
+    {
+      title: 'Payback and return',
+      items: [
+        {
+          key: 'payback', title: 'Payback time', plain: 'The first point where total savings so far catch up with everything paid so far.' + (params.isFinanced ? ' With a loan, this can come early because only the payments made so far count.' : ''),
+          formula: <>First year when <V name="Savings to date" eq="cum_savings" /> ≥ paid to date (see <V name="Projection" eq="projection" />)</>,
+          result: <>{pays ? `${results.paybackPeriod.toFixed(1)} years` : results.paybackPeriod > 25 ? `${results.paybackPeriod.toFixed(1)} years, past the 25-year panel life` : 'Never, with these settings'}</>,
+        },
+        {
+          key: '25yr_roi', title: '25-year return', plain: 'Net savings after 25 years as a share of everything paid in that time.',
+          formula: <><V name="25-year net savings" eq="projection" /> ÷ total paid over 25 years × 100</>,
+          result: <>{results.roiPercentage > 0 ? '+' : ''}{results.roiPercentage.toFixed(0)}%</>,
+        },
+      ],
+    },
+    {
+      title: 'Environment',
+      items: [
+        {
+          key: 'renewable_mix', title: 'Clean-power share', plain: 'How much of the year’s electricity comes from your solar or the grid’s renewable plants.',
+          formula: <>(solar used + grid power × <V name="Grid's renewable share" sld="slider-gridRenewablePercentage" sec="energy" />) ÷ electricity used</>,
+          result: <>{results.co2Impact.currentRenewablePercent.toFixed(0)}% before solar → {results.co2Impact.newRenewablePercent.toFixed(0)}% with solar</>,
+        },
+        {
+          key: 'co2', title: 'CO₂ avoided', plain: 'Fossil-fuel grid power no longer bought, times Florida’s grid emissions rate (EPA eGRID).',
+          formula: <>fossil grid kWh avoided × {GRID_CO2_TONS_PER_KWH} tons per kWh</>,
+          result: <>{results.co2Impact.co2SavedTonsPerYear.toFixed(1)} metric tons a year</>,
+        },
+        {
+          key: 'co2homes', title: 'Homes comparison', plain: `One average US home’s electricity puts out about ${HOME_ELECTRIC_CO2_TONS} tons of CO₂ a year (EPA).`,
+          formula: <><V name="CO₂ avoided" eq="co2" /> ÷ {HOME_ELECTRIC_CO2_TONS}</>,
+          result: <>about {(results.co2Impact.co2SavedTonsPerYear / HOME_ELECTRIC_CO2_TONS).toFixed(1)} homes’ worth a year</>,
+        },
+      ],
+    },
+  ];
+
+  const allKeys = groups.flatMap(g => g.items.map(i => i.key));
+  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(allKeys.map(k => [k, !!printMode])));
 
   useEffect(() => {
-    if (highlightedSection) {
-      setOpenSections(prev => ({ ...prev, [highlightedSection]: true }));
-      
-      const scrollTimer = setTimeout(() => {
-        const element = document.getElementById(`eq-${highlightedSection}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 150);
-
-      const clearTimer = setTimeout(() => {
-        if (onClearHighlight) {
-          onClearHighlight();
-        }
-      }, 3500);
-
-      return () => {
-        clearTimeout(scrollTimer);
-        clearTimeout(clearTimer);
-      };
-    }
+    if (!highlightedSection) return;
+    setOpen(prev => ({ ...prev, [highlightedSection]: true }));
+    const scroll = setTimeout(() => document.getElementById(`eq-${highlightedSection}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    const clear = setTimeout(() => onClearHighlight?.(), 3500);
+    return () => { clearTimeout(scroll); clearTimeout(clear); };
   }, [highlightedSection, onClearHighlight]);
 
-  const EquationBlock = ({ title, sectionKey, children }: { title: string, sectionKey: string, children: React.ReactNode }) => {
-    const isHighlighted = highlightedSection === sectionKey;
-    return (
-      <div 
-        id={`eq-${sectionKey}`} 
-        className={`space-y-2 transition-all duration-500 rounded-xl ${isHighlighted ? 'scale-[1.02] ring-2 ring-amber-500/40 p-1.5 bg-amber-500/5' : ''} ${printMode ? 'page-break-inside-avoid' : ''}`}
-      >
-        <button 
-          onClick={() => toggleSection(sectionKey)}
-          className={`flex items-center gap-2 text-amber-500 uppercase tracking-widest text-sm font-semibold transition-colors w-full text-left ${printMode ? 'cursor-default' : 'hover:text-amber-400'}`}
-        >
-          {!printMode && (
-            openSections[sectionKey] ? <ChevronDown className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />
-          )}
-          {title}
-        </button>
-        {openSections[sectionKey] && (
-          <p className={`p-4 rounded-xl border text-base leading-relaxed transition-all duration-500 ${isHighlighted ? 'bg-slate-950/95 border-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.25)]' : 'bg-slate-900/50 border-slate-800'}`}>
-            {children}
-          </p>
-        )}
-      </div>
-    );
-  };
-
-  const Var = ({ name, eq, sld, sec }: { name: string, eq?: string, sld?: string, sec?: string }) => (
-    <VariableLink
-      name={name}
-      eqKey={eq}
-      sliderId={sld}
-      sliderSection={sec}
-      onNavigateToEquation={onNavigateToEquation}
-      onNavigateToSlider={onNavigateToSlider}
-    />
-  );
+  const allOpen = allKeys.every(k => open[k]);
 
   return (
-    <div className={`w-full text-slate-300 font-mono space-y-6 ${printMode ? 'mt-0' : 'mt-6 overflow-y-auto pr-4 h-[603px]'}`}>
-      
-      <EquationBlock title="System Cost (Gross)" sectionKey="cost">
-        <span className="text-slate-500">GrossCost = </span>
-        (<Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × 1000 × <Var name="CostPerWatt" sld="slider-costPerWatt" sec="system" />) {params.hasBattery ? <>+ (<Var name="BatteryCapacity" sld="slider-batteryCapacityKwh" sec="storage" /> × <Var name="BatteryCostPerKwh" sld="slider-batteryCostPerKwh" sec="storage" />)</> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = ({results.systemSizeKW.toFixed(1)}kW × 1000 × ${params.costPerWatt.toFixed(2)}/W) {params.hasBattery ? `+ (${params.batteryCapacityKwh}kWh × $${params.batteryCostPerKwh}/kWh)` : ''}<br/>
-          = {formatCurrency(results.systemCost)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Net Investment" sectionKey="net">
-        <span className="text-slate-500">NetCost = </span>
-        <Var name="GrossCost" eq="cost" /> {params.hasIncentives ? <>- (<Var name="Federal Tax Credit" sld="slider-federalTaxCreditPercent" sec="incentives" /> + <Var name="State Rebate" sld="slider-stateRebateAmount" sec="incentives" />)</> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {formatCurrency(results.systemCost)} {params.hasIncentives ? `- (${formatCurrency(results.systemCost * (params.federalTaxCreditPercent / 100))} + ${formatCurrency(params.stateRebateAmount)})` : ''}<br/>
-          = {formatCurrency(results.netCost)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Yearly Generation" sectionKey="yearlygen">
-        <span className="text-slate-500">YearlyGeneration = </span>
-        <Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × {SOLAR_YIELD_KWH_PER_KW.toLocaleString()} kWh/kW {params.hasSolarEfficiency ? <>× <Var name="SolarEfficiency" sld="slider-solarEfficiency" sec="efficiency" /></> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.systemSizeKW.toFixed(1)} kW × 1,500 {params.hasSolarEfficiency ? `× ${params.efficiencyMode === 'monthly' ? 'monthly profile' : `${params.solarEfficiency}%`}` : ''}<br/>
-          = {results.annualGeneration.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Year 1 Bill Without Solar" sectionKey="yr1without">
-        <span className="text-slate-500">BillWithoutSolar = </span>
-        <Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> × <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.annualUsage.toLocaleString()} kWh × ${activeRate.toFixed(4)}/kWh<br/>
-          = {formatCurrency(results.annualUsage * activeRate)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Year 1 Bill With Solar" sectionKey="yr1with">
-        <span className="text-slate-500">BillWithSolar = </span>
-        (<Var name="GridPurchase" eq="grid_purchase" /> × <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" />) - (<Var name="GridSales" eq="gridsales" /> × <Var name="SellBackRate" sld="slider-sellBackRate" sec="energy" />)<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = ({results.annualGridPurchase.toLocaleString(undefined, {maximumFractionDigits:0})} kWh × ${activeRate.toFixed(4)}) - 
-          ({results.annualGridSales.toLocaleString(undefined, {maximumFractionDigits:0})} kWh × ${params.sellBackRate.toFixed(2)})<br/>
-          = {formatCurrency(results.annualGridPurchase * activeRate - results.annualGridSales * params.sellBackRate)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Grid Sales (Sold to Utility)" sectionKey="gridsales">
-        <span className="text-slate-500">GridSales = </span>
-        Sum over 365 Days of Max(0, DailySolarGen - DirectSolarUsage {params.hasBattery ? <>- BatteryCharge</> : ''})<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = The surplus solar energy generated during daylight hours that cannot be immediately consumed by the building's loads {params.hasBattery ? <>nor stored in the battery (due to it being fully charged)</> : <>and is exported to the grid</>}.<br/>
-          = {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Exported & Sold" sectionKey="exported_sold">
-        <span className="text-slate-500">ExportedRevenue = </span>
-        <Var name="GridSales" eq="gridsales" /> × <Var name="SellBackRate" sld="slider-sellBackRate" sec="energy" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh × ${params.sellBackRate.toFixed(2)}/kWh<br/>
-          = {formatCurrency(results.annualGridSales * params.sellBackRate)}/year
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Battery Utilization" sectionKey="battery_utilization">
-        <span className="text-slate-500">BatteryDraw = </span>
-        Cumulative annual storage draw to cover building loads. Managed by <Var name="BatteryCapacity" sld="slider-batteryCapacityKwh" sec="storage" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.annualBatteryDraw.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Grid Purchase Needed" sectionKey="grid_purchase">
-        <span className="text-slate-500">GridPurchase = </span>
-        Total usage unmet by immediate solar generation or <Var name="BatteryDraw" eq="battery_utilization" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.annualGridPurchase.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year<br/>
-          ≈ {formatCurrency(results.annualGridPurchase * activeRate)} spent on utility purchases (Year 1)
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Year 1 Savings" sectionKey="yr1savings">
-        <span className="text-slate-500">Year1Savings = </span>
-        <Var name="BillWithoutSolar" eq="yr1without" /> - <Var name="BillWithSolar" eq="yr1with" /> - <Var name="AnnualMaintenance" sld="slider-annualMaintenanceCost" sec="maintenance" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {formatCurrency(results.annualUsage * activeRate)} - 
-          {formatCurrency(results.annualGridPurchase * activeRate - results.annualGridSales * params.sellBackRate)} - 
-          {formatCurrency(params.hasMaintenance ? params.annualMaintenanceCost : 0)}<br/>
-          = {formatCurrency(results.yearOneSavings)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="25-Year Projection Loop" sectionKey="projection">
-        <span className="text-slate-500">For Year 1 to 25:</span><br/>
-        <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" />_Y = <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" />_(Y-1) × (1 + <Var name="AnnualBillIncrease" sld="slider-annualBillIncrease" sec="energy" />%)<br/>
-        AnnualSavings_Y = (<Var name="BillWithoutSolar" eq="yr1without" />_Y - <Var name="BillWithSolar" eq="yr1with" />_Y) - <Var name="AnnualMaintenance" sld="slider-annualMaintenanceCost" sec="maintenance" /><br/>
-        <Var name="CumulativeSavings" eq="cum_savings" /> += AnnualSavings_Y
-      </EquationBlock>
-
-      <EquationBlock title="Cumulative Savings Yr-by-Yr" sectionKey="cum_savings">
-        <span className="text-slate-500">CumulativeSavings_Y = </span>
-        <Var name="CumulativeSavings" eq="cum_savings" />_(Y-1) + AnnualSavings_Y<br/>
-        <span className="text-slate-500">Year 25 Total Cumulative Savings = </span>
-        Total savings accumulated over 25 years<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {formatCurrency(results.total25YearSavings)}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Payback Period" sectionKey="payback">
-        <span className="text-slate-500">PaybackPeriod = </span>
-        Year where <Var name="CumulativeSavings" eq="cum_savings" /> &ge; <Var name="NetCost" eq="net" /><br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.paybackPeriod > 0 
-              ? (results.paybackPeriod < 1 ? `${(results.paybackPeriod * 12).toFixed(1)} months` : `${results.paybackPeriod.toFixed(1)} years`) 
-              : 'Does not break even within 25 years'}
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="25-Year ROI" sectionKey="25yr_roi">
-        <span className="text-slate-500">25YearROI = </span>
-        (25-Year Net Profit ÷ Total Costs Incurred) × 100<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = ({formatCurrency(results.total25YearSavings)} ÷ ({formatCurrency(results.systemCost)} + <Var name="AnnualMaintenance" sld="slider-annualMaintenanceCost" sec="maintenance" /> × 25)) × 100<br/>
-          = {results.roiPercentage.toFixed(1)}%
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="Renewable Mix (Green Energy %)" sectionKey="renewable_mix">
-        <span className="text-slate-500">RenewableMix% = </span>
-        ((<Var name="SolarGenerationUsed" eq="yearlygen" /> + (<Var name="GridPurchase" eq="grid_purchase" /> × <Var name="GridRenewable%" sld="slider-gridRenewablePercentage" sec="energy" />)) ÷ <Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" />) × 100<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.co2Impact?.newRenewablePercent.toFixed(1)}% green energy share of total building loads
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="CO2 Impact (Tons Saved)" sectionKey="co2">
-        <span className="text-slate-500">KWhSaved = </span>
-        (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> × <Var name="GridRenewable%" sld="slider-gridRenewablePercentage" sec="energy" />)) - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - NewRenewableKwh)<br/>
-        <span className="text-slate-500">CO2TonsSaved = </span>
-        KWhSaved × {GRID_CO2_TONS_PER_KWH} (tons/kWh, Florida grid)<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {results.co2Impact?.co2SavedTonsPerYear.toFixed(2)} tons avoided per year
-        </span>
-      </EquationBlock>
-
-      <EquationBlock title="CO2 Impact (Equivalent Homes)" sectionKey="co2homes">
-        <span className="text-slate-500">EquivalentHomes = </span>
-        <Var name="CO2TonsSaved" eq="co2" /> / {HOME_ELECTRIC_CO2_TONS} (tons per home)<br/>
-        <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {(results.co2Impact?.co2SavedTonsPerYear / HOME_ELECTRIC_CO2_TONS).toFixed(1)} homes per year
-        </span>
-      </EquationBlock>
-
-    </div>
+    <NavCtx.Provider value={{ onNavigateToEquation, onNavigateToSlider }}>
+      <div className="space-y-5">
+        {!printMode && (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <span>
+              <span className="text-emerald-300">Green</span> terms are inputs you can change; <span className="text-amber-300">amber</span> terms have their own formula.
+            </span>
+            <button type="button" onClick={() => setOpen(Object.fromEntries(allKeys.map(k => [k, !allOpen])))} className="text-slate-300 hover:text-white underline">
+              {allOpen ? 'Collapse all' : 'Expand all'}
+            </button>
+          </div>
+        )}
+        {groups.map(g => (
+          <section key={g.title} className="space-y-2">
+            <h3 className="text-xs uppercase tracking-wider text-slate-500">{g.title}</h3>
+            {g.items.map(item => (
+              <Card key={item.key} item={item} printMode={printMode} open={!!open[item.key]} highlighted={highlightedSection === item.key}
+                onToggle={() => setOpen(prev => ({ ...prev, [item.key]: !prev[item.key] }))} />
+            ))}
+          </section>
+        ))}
+      </div>
+    </NavCtx.Provider>
   );
 }

@@ -108,12 +108,12 @@ const getInitialDefaults = (): SolarParams => {
 type ChartTab = 'timeline' | 'sensitivity' | 'compare' | 'renewability' | 'outage' | 'equations';
 
 const CHART_TABS: { key: ChartTab; label: string; icon: React.ReactNode; blurb: string }[] = [
-  { key: 'timeline', label: 'Savings over time', icon: <Activity className="w-4 h-4" />, blurb: 'What the system costs against what it saves, year by year for 25 years.' },
-  { key: 'sensitivity', label: 'What if…', icon: <BarChart2 className="w-4 h-4" />, blurb: 'Vary one setting to see how payback and savings respond.' },
-  { key: 'compare', label: 'Monthly balance', icon: <GitCompare className="w-4 h-4" />, blurb: 'Solar made vs. electricity used, month by month.' },
-  { key: 'renewability', label: 'Energy mix', icon: <Leaf className="w-4 h-4" />, blurb: 'How much of each month’s power comes from solar, clean grid power and fossil grid power.' },
-  { key: 'outage', label: 'Outage backup', icon: <ShieldAlert className="w-4 h-4" />, blurb: 'How long a battery could keep things running in a power cut.' },
-  { key: 'equations', label: 'Formulas', icon: <Calculator className="w-4 h-4" />, blurb: 'Every calculation, with your numbers filled in. Click a value to jump to it.' },
+  { key: 'timeline', label: 'Savings over time', icon: <Activity className="w-4 h-4" />, blurb: 'Does it pay off, and when?' },
+  { key: 'sensitivity', label: 'What if…', icon: <BarChart2 className="w-4 h-4" />, blurb: 'What changes if we adjust one setting?' },
+  { key: 'compare', label: 'Monthly balance', icon: <GitCompare className="w-4 h-4" />, blurb: 'Does solar keep up with our use each month?' },
+  { key: 'renewability', label: 'Energy mix', icon: <Leaf className="w-4 h-4" />, blurb: 'How clean is our electricity, before and after?' },
+  { key: 'outage', label: 'Outage backup', icon: <ShieldAlert className="w-4 h-4" />, blurb: 'Could we keep the lights on in a long outage?' },
+  { key: 'equations', label: 'Formulas', icon: <Calculator className="w-4 h-4" />, blurb: 'How is each number worked out?' },
 ];
 
 const SECTION_NAMES: Record<CompareKey, { flag: keyof SolarParams; name: string }> = {
@@ -276,6 +276,11 @@ export default function App() {
       }
       return nextParams;
     });
+  };
+
+  const enableBattery = () => {
+    setParams(prev => ({ ...prev, hasBattery: true, batteryCapacityKwh: prev.batteryCapacityKwh > 0 ? prev.batteryCapacityKwh : 40 }));
+    navigateToSlider('slider-batteryCapacityKwh', 'storage');
   };
 
   const applyQuote = (q: VendorQuote) => {
@@ -521,6 +526,7 @@ export default function App() {
                     onClearCompare={() => setComparisonMode(null)}
                     onExplain={(k) => navigateToEquation(k)}
                     sellBackRate={params.sellBackRate}
+                    financed={params.isFinanced}
                   />
                 )}
 
@@ -538,7 +544,7 @@ export default function App() {
                       >{t.icon}{t.label}</button>
                     ))}
                   </div>
-                  <p className="text-sm text-slate-400 mb-4">{tab.blurb}</p>
+                  <h3 className="text-base font-semibold text-white mb-4">{tab.blurb}</h3>
 
                   {activeTab === 'sensitivity' && (
                     <div className="flex flex-wrap gap-3 mb-2">
@@ -589,11 +595,11 @@ export default function App() {
                         onApplyExtrema={applySensitivityValue}
                       />
                     ) : activeTab === 'outage' ? (
-                      <OutageChart data={results.outageResilience} />
+                      <OutageChart data={results.outageResilience} onEnableBattery={enableBattery} />
                     ) : activeTab === 'compare' ? (
                       <MonthlyBalanceChart data={results.monthlyEnergyData} results={results} />
                     ) : activeTab === 'renewability' ? (
-                      <RenewabilityChart data={results.monthlyEnergyData} />
+                      <RenewabilityChart data={results.monthlyEnergyData} gridRenewablePercent={params.gridRenewablePercentage} />
                     ) : (
                       <Equations
                         params={params}

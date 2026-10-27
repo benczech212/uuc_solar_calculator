@@ -1,85 +1,66 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MonthEnergyData } from '../types';
+import { C, axisProps, tooltipStyle, Facts, Legend, Note } from './chartTheme';
 
 interface RenewabilityChartProps {
   data: MonthEnergyData[];
+  gridRenewablePercent?: number;
 }
 
-export const RenewabilityChart: React.FC<RenewabilityChartProps> = ({ data }) => {
-  const chartData = data.map(d => {
+const SERIES = [
+  { key: 'solar', label: 'Your solar', color: C.solar },
+  { key: 'clean', label: 'Clean grid power', color: C.gridClean },
+  { key: 'fossil', label: 'Fossil grid power', color: C.gridFossil },
+] as const;
+
+// Energy mix: where each month's electricity comes from, as shares of that month's use.
+export const RenewabilityChart: React.FC<RenewabilityChartProps> = ({ data, gridRenewablePercent }) => {
+  const rows = data.map(d => {
     const total = d.solarConsumed + d.gridRenewable + d.gridNonRenewable;
-    if (total === 0) {
-       return {
-         ...d,
-         percSolar: 0,
-         percGridRenewable: 0,
-         percGridNonRenewable: 0,
-         rawSolar: d.solarConsumed,
-         rawGridRenewable: d.gridRenewable,
-         rawGridNonRenewable: d.gridNonRenewable
-       };
-    }
+    const pct = (x: number) => (total > 0 ? (x / total) * 100 : 0);
     return {
-      ...d,
-      percSolar: isNaN((d.solarConsumed / total)) ? 0 : (d.solarConsumed / total) * 100,
-      percGridRenewable: isNaN((d.gridRenewable / total)) ? 0 : (d.gridRenewable / total) * 100,
-      percGridNonRenewable: isNaN((d.gridNonRenewable / total)) ? 0 : (d.gridNonRenewable / total) * 100,
-      rawSolar: d.solarConsumed || 0,
-      rawGridRenewable: d.gridRenewable || 0,
-      rawGridNonRenewable: d.gridNonRenewable || 0
+      month: d.monthName,
+      solar: pct(d.solarConsumed), clean: pct(d.gridRenewable), fossil: pct(d.gridNonRenewable),
+      kwh: { solar: d.solarConsumed, clean: d.gridRenewable, fossil: d.gridNonRenewable },
     };
   });
+  if (rows.length === 0) return <p className="text-sm text-slate-500 py-12 text-center">No monthly data to show yet.</p>;
+
+  const sum = (k: 'solar' | 'clean' | 'fossil') => data.reduce((a, d) => a + (k === 'solar' ? d.solarConsumed : k === 'clean' ? d.gridRenewable : d.gridNonRenewable), 0);
+  const total = sum('solar') + sum('clean') + sum('fossil');
+  const yearClean = total > 0 ? ((sum('solar') + sum('clean')) / total) * 100 : 0;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col pt-8">
-      <div className="w-full h-[400px]">
+    <div>
+      <Facts items={[
+        { label: 'Clean power before solar', value: `${Math.round(gridRenewablePercent ?? 0)}%`, note: 'the grid’s renewable share' },
+        { label: 'Clean power with solar', value: `${Math.round(yearClean)}%`, tone: 'good', note: 'your solar plus clean grid power' },
+        { label: 'Covered by your solar', value: `${Math.round(total > 0 ? (sum('solar') / total) * 100 : 0)}%`, tone: 'sun', note: 'of the year’s use, month by month' },
+      ]} />
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-            <XAxis dataKey="monthName" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis tickFormatter={(val) => `${Math.round(val)}%`} stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={50} domain={[0, 100]} />
+          <BarChart data={rows} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.grid} />
+            <XAxis {...axisProps} dataKey="month" interval={0} />
+            <YAxis {...axisProps} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} width={44} />
             <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg shadow-xl outline-none">
-                      <p className="text-slate-300 font-semibold mb-2">{label}</p>
-                      <div className="space-y-1">
-                        {[...payload].reverse().map((entry, index) => {
-                          const d = entry.payload;
-                          let rawVal = 0;
-                          let percVal = 0;
-                          if (entry.dataKey === 'percSolar') { rawVal = d.rawSolar; percVal = d.percSolar; }
-                          if (entry.dataKey === 'percGridRenewable') { rawVal = d.rawGridRenewable; percVal = d.percGridRenewable; }
-                          if (entry.dataKey === 'percGridNonRenewable') { rawVal = d.rawGridNonRenewable; percVal = d.percGridNonRenewable; }
-                          
-                          return (
-                            <div key={index} className="flex items-center justify-between gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }} />
-                                <span className="text-slate-400">{entry.name}</span>
-                              </div>
-                              <span className="text-slate-200 font-mono">
-                                {percVal.toFixed(1)}% <span className="text-slate-500 text-xs">({Math.round(rawVal).toLocaleString()} kWh)</span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
+              {...tooltipStyle}
+              cursor={{ fill: '#1e293b66' }}
+              formatter={(v: number, key: string, item: any) => [
+                `${v.toFixed(0)}% (${Math.round(item.payload.kwh[key]).toLocaleString()} kWh)`,
+                SERIES.find(s => s.key === key)?.label ?? key,
+              ]}
             />
-            <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-            <Bar dataKey="percSolar" name="Solar Power" stackId="a" fill="#15803d" />
-            <Bar dataKey="percGridRenewable" name="Grid Renewable" stackId="a" fill="#86efac" />
-            <Bar dataKey="percGridNonRenewable" name="Grid Non-Renewable" stackId="a" fill="#94a3b8" />
+            {SERIES.map(s => <Bar key={s.key} dataKey={s.key} stackId="mix" fill={s.color} maxBarSize={36} />)}
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <Legend items={SERIES.map(s => ({ color: s.color, label: s.label }))} />
+      <Note>
+        Each month, “your solar” is the solar made that month, up to what UUC used. Extra solar in a sunny month earns
+        credits but isn’t counted toward other months, so this is a conservative view of how clean UUC’s power is.
+      </Note>
     </div>
   );
 };

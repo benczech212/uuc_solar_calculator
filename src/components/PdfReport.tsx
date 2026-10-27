@@ -85,7 +85,7 @@ export const PdfReport: React.FC<PdfReportProps & { isHidden?: boolean }> = ({ p
             <Zap className="w-5 h-5 text-amber-400" />
             <h2 className="text-xl font-light text-white">25-Year Cost vs Savings</h2>
           </div>
-          <div className="h-[400px] w-full">
+          <div className="w-full">
             <RoiChart data={results.chartData} paybackPeriod={results.paybackPeriod} />
           </div>
         </div>
@@ -98,8 +98,8 @@ export const PdfReport: React.FC<PdfReportProps & { isHidden?: boolean }> = ({ p
               <h2 className="text-xl font-light text-white">Energy Renewability Transition</h2>
             </div>
           </div>
-          <div className="h-[400px] w-full">
-            <RenewabilityChart data={results.monthlyEnergyData} />
+          <div className="w-full">
+            <RenewabilityChart data={results.monthlyEnergyData} gridRenewablePercent={params.gridRenewablePercentage} />
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export const PdfReport: React.FC<PdfReportProps & { isHidden?: boolean }> = ({ p
               <ShieldAlert className="w-5 h-5 text-amber-400" />
               <h2 className="text-xl font-light text-white">Outage Resilience Profile</h2>
             </div>
-            <div className="h-[400px] w-full">
+            <div className="w-full">
               <OutageChart data={results.outageResilience} />
             </div>
           </div>

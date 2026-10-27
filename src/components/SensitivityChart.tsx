@@ -1,7 +1,8 @@
 import React from 'react';
-import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceLine } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { SensitivityData, SensitivityVariable } from '../types';
 import { formatCurrency } from '../utils';
+import { C, axisProps, tooltipStyle, compactUsd, Legend, Note } from './chartTheme';
 
 interface ChartProps {
   data: SensitivityData[];
@@ -11,222 +12,96 @@ interface ChartProps {
   currentValue?: number;
 }
 
+const VARS: Record<SensitivityVariable, { name: string; fmt: (v: number) => string }> = {
+  systemSize: { name: 'system size', fmt: (v) => `${v.toFixed(1)} kW` },
+  battery: { name: 'battery size', fmt: (v) => `${Math.round(v)} kWh` },
+  interestRate: { name: 'interest rate', fmt: (v) => `${v.toFixed(2)}%` },
+  downPayment: { name: 'down payment', fmt: (v) => formatCurrency(v) },
+  loanTerm: { name: 'loan length', fmt: (v) => `${Math.round(v)} yrs` },
+};
+
+const yrs = (v: number) => (v >= 30 ? '30+ yrs' : `${v.toFixed(1)} yrs`);
+
+function Option({ title, p, value, tone, v, edge, onApply }: { title: string; p: SensitivityData; value: string; tone: string; v: { name: string; fmt: (x: number) => string }; edge: boolean; onApply?: (x: number) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onApply?.(p.xValue)}
+      className="text-left bg-slate-950/40 border border-slate-800 hover:border-amber-500/50 rounded-lg p-3 transition-colors"
+      title={`Set the ${v.name} to ${v.fmt(p.xValue)}`}
+    >
+      <span className="block text-xs text-slate-400">{title}</span>
+      <span className={`block text-xl font-mono ${tone}`}>{value}</span>
+      <span className="block text-xs text-slate-500">at {v.fmt(p.xValue)}{edge ? ' (edge of range)' : ''} · <span className="text-amber-400">use this</span></span>
+    </button>
+  );
+}
+
+// "What if": re-runs the whole model across a range of one setting and plots the results,
+// with the current setting marked and the best points one click away.
 export function SensitivityChart({ data, variable, metric, onApplyExtrema, currentValue }: ChartProps) {
-  
-  const formatXAxis = (value: number) => {
-    if (variable === 'systemSize') return `${value.toFixed(1)}kW`;
-    if (variable === 'battery') return `${value.toFixed(0)}kWh`;
-    if (variable === 'interestRate') return `${value.toFixed(2)}%`;
-    if (variable === 'downPayment') return `$${value.toLocaleString()}`;
-    if (variable === 'loanTerm') return `${value.toFixed(0)}yrs`;
-    return value.toString();
-  };
+  if (data.length < 2) return <p className="text-sm text-slate-500 py-12 text-center">Working it out…</p>;
+  const v = VARS[variable];
+  const showProfit = metric === 'profit' || metric === 'both';
+  const showPayback = metric === 'breakeven' || metric === 'both';
 
-  const getXAxisLabel = () => {
-    if (variable === 'systemSize') return "System Size (kW)";
-    if (variable === 'battery') return "Battery Capacity (kWh)";
-    if (variable === 'interestRate') return "Interest Rate (%)";
-    if (variable === 'downPayment') return "Down Payment ($)";
-    if (variable === 'loanTerm') return "Loan Term (Years)";
-    return "";
-  };
-
-  const varName = getXAxisLabel().replace(/\s*\(.*\)/, '').toLowerCase();
-
-  const validPaybacks =data.filter(d => d.paybackPeriod > 0 && d.paybackPeriod < 30);
-  const minPayback = validPaybacks.length > 0 ? validPaybacks.reduce((min, p) => p.paybackPeriod < min.paybackPeriod ? p : min, validPaybacks[0]) : null;
-
-  const validValidProfits = data.filter(d => d.netCost > 0);
-  const maxProfit = validValidProfits.length > 0 ? validValidProfits.reduce((max, p) => p.netProfit > max.netProfit ? p : max, validValidProfits[0]) : null;
-
-  const activeYAxis = metric === 'slope' ? 'slope' : metric === 'breakeven' ? 'payback' : 'profit';
+  const paying = data.filter(d => d.paybackPeriod > 0 && d.paybackPeriod < 30);
+  const fastest = paying.length ? paying.reduce((a, b) => (b.paybackPeriod < a.paybackPeriod ? b : a)) : null;
+  const best = data.reduce((a, b) => (b.netProfit > a.netProfit ? b : a));
+  const here = currentValue === undefined ? null : data.reduce((a, b) => (Math.abs(b.xValue - currentValue) < Math.abs(a.xValue - currentValue) ? b : a));
+  const edge = (p: SensitivityData) => p === data[0] || p === data[data.length - 1];
 
   return (
-    <div className="w-full flex flex-col">
-    
-    <div className="bg-slate-800/30 border border-slate-700/50 p-4 rounded-xl mt-4 text-xs text-slate-300 leading-relaxed">
-      {metric === 'both' && <p>How <span className="text-emerald-400">25-year savings</span> and <span className="text-amber-400">payback time</span> change as you vary the {varName}. The blue line is your current setting.</p>}
-      {metric === 'profit' && <p>Total <span className="text-emerald-400">savings after 25 years</span> at each {varName}. The highest point is the best long-term value.</p>}
-      {metric === 'breakeven' && <p>Years until the system <span className="text-amber-400">pays for itself</span> at each {varName}. The lowest point pays back fastest.</p>}
-      {metric === 'slope' && <p>How much each extra unit of {varName} adds to 25-year savings. Where the line drops below zero, going bigger starts to lose money.</p>}
-    </div>
-
-    <div className="w-full h-72 mt-4 font-mono text-xs">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={data}
-          margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-          <XAxis 
-            dataKey="xValue" 
-            type="number"
-            domain={['dataMin', 'dataMax']}
-            tickFormatter={formatXAxis} 
-            stroke="#64748b" 
-            tickLine={false}
-            axisLine={false}
-            label={{ value: getXAxisLabel(), position: "insideBottom", offset: -15, fill: "#94a3b8", fontSize: 10, fontFamily: "Inter, sans-serif" }}
-          />
-          
-          {(metric === 'profit' || metric === 'both') && (
-            <YAxis 
-              yAxisId="profit"
-              tickFormatter={(value) => {
-                if (typeof value !== 'number') return `${value}`;
-                if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
-                if (value >= 1000) return `$${Math.round(value / 1000)}k`;
-                return `$${value}`;
-              }}
-              stroke="#10b981"
-              tickLine={false}
-              axisLine={false}
-              label={{ value: "25-Yr Profit", angle: -90, position: "insideLeft", fill: "#10b981", fontSize: 10, fontFamily: "Inter, sans-serif" }}
-            />
-          )}
-
-          {(metric === 'breakeven' || metric === 'both') && (
-            <YAxis 
-              yAxisId="payback"
-              orientation="right"
-              tickFormatter={(value) => `${Number(value).toFixed(1)}y`} 
-              stroke="#f59e0b"
-              tickLine={false}
-              axisLine={false}
-              domain={['auto', 'auto']}
-              label={{ value: "Break-even (Years)", angle: 90, position: "insideRight", fill: "#f59e0b", fontSize: 10, fontFamily: "Inter, sans-serif" }}
-            />
-          )}
-
-          {metric === 'slope' && (
-            <YAxis 
-              yAxisId="slope"
-              orientation="right"
-              tickFormatter={(value) => `${value > 0 ? '+' : ''}$${value.toFixed(0)}`} 
-              stroke="#8b5cf6"
-              tickLine={false}
-              axisLine={false}
-              domain={['auto', 'auto']}
-              label={{ value: "Profit Slope ($/unit)", angle: 90, position: "insideRight", fill: "#8b5cf6", fontSize: 10, fontFamily: "Inter, sans-serif" }}
-            />
-          )}
-
-          <Tooltip 
-            formatter={(value: number, name: string) => {
-              if (name === 'Net 25-Yr Profit') return formatCurrency(value);
-              if (name === 'Payback Period') return `${value >= 30 ? '30+' : value.toFixed(1)} Years`;
-              if (name === 'Profit Slope') return `${value > 0 ? '+' : ''}${formatCurrency(value)} / unit`;
-              return value;
-            }}
-            labelFormatter={(label, payload) => {
-              const xVal = payload && payload.length > 0 ? (payload[0].payload as SensitivityData).xValue : 0;
-              return `${getXAxisLabel()}: ${formatXAxis(xVal)}`;
-            }}
-            contentStyle={{ backgroundColor: '#020617', borderRadius: '8px', border: '1px solid #1e293b', padding: '12px', fontFamily: 'Inter, sans-serif', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)' }}
-            itemStyle={{ color: '#f8fafc' }}
-            labelStyle={{ color: '#94a3b8', marginBottom: '8px' }}
-          />
-
-          {(metric === 'profit' || metric === 'both') && (
-            <Line 
-              yAxisId="profit"
-              type="monotone" 
-              dataKey="netProfit" 
-              name="Net 25-Yr Profit"
-              stroke="#10b981" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5, fill: "#10b981", stroke: "#020617", strokeWidth: 2 }}
-            />
-          )}
-
-          {(metric === 'breakeven' || metric === 'both') && (
-            <Line 
-              yAxisId="payback"
-              type="monotone" 
-              dataKey="paybackPeriod" 
-              name="Payback Period"
-              stroke="#f59e0b" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5, fill: "#f59e0b", stroke: "#020617", strokeWidth: 2 }}
-            />
-          )}
-
-          {metric === 'slope' && (
-            <Line 
-              yAxisId="slope"
-              type="monotone" 
-              dataKey="profitSlope" 
-              name="Profit Slope"
-              stroke="#8b5cf6" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5, fill: "#8b5cf6", stroke: "#020617", strokeWidth: 2 }}
-            />
-          )}
-
-          {metric === 'slope' && (
-            <ReferenceLine yAxisId="slope" y={0} stroke="#94a3b8" strokeWidth={2} strokeDasharray="4 4" />
-          )}
-
-          {minPayback && (
-            <>
-              {/* Always show vertical line for min payback if possible */}
-              <ReferenceLine yAxisId={activeYAxis} x={minPayback.xValue} stroke="#fbbf24" strokeDasharray="3 3" opacity={0.5} />
-              {(metric === 'breakeven' || metric === 'both') && <ReferenceDot yAxisId="payback" x={minPayback.xValue} y={minPayback.paybackPeriod} r={4} fill="#fbbf24" stroke="none" />}
-            </>
-          )}
-
-          {maxProfit && (
-            <>
-              {/* Always show vertical line for max profit */}
-              <ReferenceLine yAxisId={activeYAxis} x={maxProfit.xValue} stroke="#6ee7b7" strokeDasharray="3 3" opacity={0.5} />
-              {metric === 'slope' && <ReferenceDot yAxisId="slope" x={maxProfit.xValue} y={0} r={4} fill="#c084fc" stroke="none" />}
-              {(metric === 'profit' || metric === 'both') && <ReferenceDot yAxisId="profit" x={maxProfit.xValue} y={maxProfit.netProfit} r={4} fill="#6ee7b7" stroke="none" />}
-            </>
-          )}
-
-          {currentValue !== undefined && (
-            <ReferenceLine 
-              yAxisId={activeYAxis}
-              x={currentValue} 
-              stroke="#3b82f6" 
-              strokeDasharray="3 3" 
-              opacity={0.8}
-              label={{ value: "Current", position: "insideTopLeft", fill: "#3b82f6", fontSize: 10, fontFamily: "Inter, sans-serif" }}
-            />
-          )}
-
-        </ComposedChart>
-      </ResponsiveContainer>
-    </div>
-    
-    <div className="mt-8 bg-slate-900/50 rounded-xl p-4 border border-slate-800 flex flex-col items-center">
-      <h3 className="text-sm font-semibold text-slate-200 mb-3 uppercase tracking-wider text-center">Best settings found (click to use)</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-        {maxProfit && (
-          <button 
-            onClick={() => onApplyExtrema && onApplyExtrema(maxProfit.xValue)}
-            className="bg-slate-950 p-4 rounded-lg border border-emerald-900/50 hover:border-emerald-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
-          >
-            <span className="text-[11px] uppercase text-emerald-500 font-bold tracking-widest mb-1">Most 25-year savings</span>
-            <span className="text-xl text-emerald-400 font-mono tracking-tight">{formatCurrency(maxProfit.netProfit)}</span>
-            <span className="text-xs text-slate-400 mt-1">at {formatXAxis(maxProfit.xValue)}</span>
-          </button>
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+        {here && (
+          <div className="bg-slate-950/40 border border-indigo-400/30 rounded-lg p-3">
+            <span className="block text-xs text-slate-400">Your setting now</span>
+            <span className="block text-xl font-mono text-white">{v.fmt(currentValue!)}</span>
+            <span className="block text-xs text-slate-500">{formatCurrency(here.netProfit)} · payback {yrs(here.paybackPeriod)}</span>
+          </div>
         )}
-        {minPayback && (
-          <button 
-            onClick={() => onApplyExtrema && onApplyExtrema(minPayback.xValue)}
-            className="bg-slate-950 p-4 rounded-lg border border-amber-900/50 hover:border-amber-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
-          >
-            <span className="text-[11px] uppercase text-amber-500 font-bold tracking-widest mb-1">Fastest payback</span>
-            <span className="text-xl text-amber-400 font-mono tracking-tight">{minPayback.paybackPeriod.toFixed(1)} <span className="text-sm">Yrs</span></span>
-            <span className="text-xs text-slate-400 mt-1">at {formatXAxis(minPayback.xValue)}</span>
-          </button>
-        )}
+        <Option v={v} edge={edge(best)} onApply={onApplyExtrema} title="Most 25-year savings" p={best} value={formatCurrency(best.netProfit)} tone="text-emerald-400" />
+        {fastest && <Option v={v} edge={edge(fastest)} onApply={onApplyExtrema} title="Fastest payback" p={fastest} value={yrs(fastest.paybackPeriod)} tone="text-amber-400" />}
       </div>
-    </div>
+
+      <div className="h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 16, right: 8, left: 4, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.grid} />
+            <XAxis {...axisProps} dataKey="xValue" type="number" domain={['dataMin', 'dataMax']} tickFormatter={v.fmt} tickCount={6} />
+            {showProfit &&<YAxis {...axisProps} yAxisId="profit" tickFormatter={compactUsd} width={56} stroke={C.savings} tick={{ fill: C.savings, fontSize: 12 }} />}
+            {showPayback && <YAxis {...axisProps} yAxisId="payback" orientation="right" width={52} domain={[0, 'auto']} tickFormatter={(x: number) => `${Number(x).toFixed(0)} yr`} stroke={C.solar} tick={{ fill: C.solar, fontSize: 12 }} />}
+            {metric === 'slope' && <YAxis {...axisProps} yAxisId="slope" tickFormatter={compactUsd} width={56} />}
+            <Tooltip
+              {...tooltipStyle}
+              labelFormatter={(_, p) => (p?.[0] ? `${v.name[0].toUpperCase()}${v.name.slice(1)}: ${v.fmt((p[0].payload as SensitivityData).xValue)}` : '')}
+              formatter={(val: number, name: string) =>
+                name === 'payback' ? [yrs(val), 'Payback'] :
+                name === 'slope' ? [`${formatCurrency(val)} per unit`, 'Extra savings per step'] :
+                [formatCurrency(val), '25-year savings']}
+            />
+            {showProfit &&<Line yAxisId="profit" dataKey="netProfit" name="profit" stroke={C.savings} strokeWidth={2.5} dot={false} type="monotone" />}
+            {showPayback && <Line yAxisId="payback" dataKey="paybackPeriod" name="payback" stroke={C.solar} strokeWidth={2.5} dot={false} type="monotone" />}
+            {metric === 'slope' && <Line yAxisId="slope" dataKey="profitSlope" name="slope" stroke={C.current} strokeWidth={2.5} dot={false} type="monotone" />}
+            {metric === 'slope' && <ReferenceLine yAxisId="slope" y={0} stroke={C.axis} strokeDasharray="4 4" />}
+            {currentValue !== undefined && (
+              <ReferenceLine yAxisId={metric === 'slope' ? 'slope' : showProfit ? 'profit' : 'payback'} x={currentValue} stroke={C.current} strokeDasharray="4 4"
+                label={{ value: 'You', position: 'top', fill: C.current, fontSize: 12 }} />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <Legend items={[
+        ...(showProfit ?[{ color: C.savings, label: '25-year savings (left scale)' }] : []),
+        ...(showPayback ? [{ color: C.solar, label: 'Years to pay back (right scale)' }] : []),
+        ...(metric === 'slope' ? [{ color: C.current, label: 'Extra 25-year savings from one more step' }] : []),
+      ]} />
+      <Note>
+        Each point re-runs the whole calculation with only the {v.name} changed; everything else stays as you set it.
+        {variable === 'systemSize' && ' Cost scales with size at your current price per watt. Bigger keeps paying here because Duke credits extra solar at the full rate; credits left at year-end are paid at a much lower rate, which this model does not include.'}
+        {metric === 'slope' && ' Where the line drops below zero, making it bigger starts to cost more than it saves.'}
+      </Note>
     </div>
   );
 }
