@@ -83,7 +83,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
         {/* Metric 1: Annual Overview */}
         <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
           <div>
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Net Annual Balance</span>
+            <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Net Annual Balance</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className={`text-xl font-mono font-bold ${netAnnualBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {netAnnualBalance >= 0 ? '+' : ''}{netAnnualBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -102,7 +102,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
         <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Peak Monthly Surplus</span>
+              <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Peak Monthly Surplus</span>
               <ArrowUpRight className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="flex items-baseline gap-2 mt-1">
@@ -121,7 +121,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
         <div className="bg-slate-900/40 p-4 border border-slate-800/60 rounded-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Max Monthly Deficit</span>
+              <span className="text-[11px] text-slate-400 uppercase tracking-widest font-mono">Max Monthly Deficit</span>
               <ArrowDownRight className="w-4 h-4 text-rose-400" />
             </div>
             <div className="flex items-baseline gap-2 mt-1">
@@ -141,7 +141,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
       <div className="bg-slate-950/30 p-5 rounded-xl border border-slate-900 shadow-inner relative">
         <h4 className="text-xs uppercase tracking-widest font-mono text-slate-400 mb-6 flex items-center justify-between">
           <span>Projected Monthly Balance Net Profile (kWh)</span>
-          <span className="text-[10px] text-slate-500 flex items-center gap-1 font-sans">
+          <span className="text-[11px] text-slate-500 flex items-center gap-1 font-sans">
             <Info className="w-3.5 h-3.5" /> Hover bars to inspect exact details
           </span>
         </h4>
@@ -220,10 +220,10 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
           <table className="w-full text-left font-mono text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-900 bg-slate-950 text-slate-400">
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[10px]">Month</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[10px] text-amber-500">Generation</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[10px] text-sky-400">Usage</th>
-                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[10px] text-slate-300">Net Balance</th>
+                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px]">Month</th>
+                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-amber-500">Generation</th>
+                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-sky-400">Usage</th>
+                <th className="py-2.5 px-4 font-normal uppercase tracking-wider text-[11px] text-slate-300">Net Balance</th>
               </tr>
             </thead>
             <tbody>

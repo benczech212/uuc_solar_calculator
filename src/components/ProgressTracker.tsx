@@ -220,14 +220,14 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
             <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-sky-500" />
-                <p className="text-[10px] uppercase text-slate-500 tracking-wider">Projected Post-Solar</p>
+                <p className="text-[11px] uppercase text-slate-500 tracking-wider">Projected Post-Solar</p>
               </div>
               <p className="text-2xl font-mono text-white">{formatCurrency(projectedAvgMonthlyBill)} <span className="text-sm text-slate-500">/mo</span></p>
             </div>
             <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
               <div className="flex items-center gap-2 mb-1">
                 <LineChart className="w-4 h-4 text-amber-500" />
-                <p className="text-[10px] uppercase text-slate-500 tracking-wider">Actual Post-Solar</p>
+                <p className="text-[11px] uppercase text-slate-500 tracking-wider">Actual Post-Solar</p>
               </div>
               <p className="text-2xl font-mono text-white">
                 {formatCurrency(actualAvgMonthlyBill)} <span className="text-sm text-slate-500">/mo</span>
@@ -236,7 +236,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
             <div className={`bg-slate-900/60 p-4 rounded-xl border ${totalVariance <= 0 ? 'border-emerald-900/50' : 'border-rose-900/50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <AlertCircle className={`w-4 h-4 ${totalVariance <= 0 ? 'text-emerald-500' : 'text-rose-500'}`} />
-                <p className="text-[10px] uppercase text-slate-500 tracking-wider">Post-Solar Variance</p>
+                <p className="text-[11px] uppercase text-slate-500 tracking-wider">Post-Solar Variance</p>
               </div>
               <p className={`text-2xl font-mono ${totalVariance <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {totalVariance <= 0 ? '-' : '+'}{formatCurrency(Math.abs(totalVariance))}
@@ -244,21 +244,21 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
               <p className="text-xs text-slate-400 mt-1">{totalVariance <= 0 ? 'Ahead of projection' : 'Behind projection'}</p>
             </div>
             <div className="bg-slate-900/60 p-4 rounded-xl border border-sky-900/50">
-              <p className="text-[10px] uppercase text-sky-500 tracking-wider mb-1">Adjusted Payback</p>
+              <p className="text-[11px] uppercase text-sky-500 tracking-wider mb-1">Adjusted Payback</p>
               <p className="text-2xl font-mono text-sky-400">
                 {newPaybackPeriod > 0 ? `${newPaybackPeriod.toFixed(1)} yrs` : '---'}
               </p>
               <p className="text-xs text-sky-500/70 mt-1">vs {results.paybackPeriod.toFixed(1)} yrs mod</p>
             </div>
             <div className="bg-slate-900/60 p-4 rounded-xl border border-purple-900/50">
-              <p className="text-[10px] uppercase text-purple-500 tracking-wider mb-1">Adj. 25yr Profit</p>
+              <p className="text-[11px] uppercase text-purple-500 tracking-wider mb-1">Adj. 25yr Profit</p>
               <p className="text-2xl font-mono text-purple-400">
                 {formatCurrency(new25YearSavings)}
               </p>
               <p className="text-xs text-purple-500/70 mt-1">vs {formatCurrency(projected25YearSavings)} mod</p>
             </div>
             <div className="bg-slate-900/60 p-4 rounded-xl border border-indigo-900/50">
-              <p className="text-[10px] uppercase text-indigo-500 tracking-wider mb-1">Adj. 25yr ROI</p>
+              <p className="text-[11px] uppercase text-indigo-500 tracking-wider mb-1">Adj. 25yr ROI</p>
               <p className="text-2xl font-mono text-indigo-400">
                 {newRoiPercentage > 0 ? `+${newRoiPercentage.toFixed(1)}%` : `${newRoiPercentage.toFixed(1)}%`}
               </p>
@@ -328,7 +328,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Billing Month (YYYY-MM)</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Billing Month (YYYY-MM)</label>
                       <input
                         type="month"
                         value={e.monthString}
@@ -337,7 +337,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Actual Bill Amount ($)</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Actual Bill Amount ($)</label>
                        <input
                           type="number"
                           value={e.billAmount}
@@ -346,7 +346,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                         />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Usage (kWh)</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Usage (kWh)</label>
                        <input
                           type="number"
                           value={e.actualUsageKwh}
@@ -355,7 +355,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                         />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-slate-500 tracking-wider mb-1 block">Computed Rate ($/kWh)</label>
+                      <label className="text-[11px] uppercase text-slate-500 tracking-wider mb-1 block">Computed Rate ($/kWh)</label>
                       <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-400 text-right font-mono h-[38px] flex items-center justify-end">
                         {e.actualUsageKwh > 0 ? (e.billAmount / e.actualUsageKwh).toFixed(4) : "0.0000"}
                       </div>
@@ -376,7 +376,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                 {isPostSolar && (
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full pt-4 border-t border-amber-900/20">
                     <div>
-                      <label className="text-[10px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Solar Gen (kWh)</label>
+                      <label className="text-[11px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Solar Gen (kWh)</label>
                       <input
                         type="number"
                         placeholder={projectedGen > 0 ? projectedGen.toFixed(0) : '0'}
@@ -386,7 +386,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Exported (kWh)</label>
+                      <label className="text-[11px] uppercase text-amber-500 tracking-wider mb-1 block border-b border-amber-900/30 pb-1">Exported (kWh)</label>
                       <input
                         type="number"
                         placeholder="0"
@@ -396,17 +396,17 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-emerald-500 tracking-wider mb-1 block border-b border-emerald-900/30 pb-1">Solar Value ($)</label>
+                      <label className="text-[11px] uppercase text-emerald-500 tracking-wider mb-1 block border-b border-emerald-900/30 pb-1">Solar Value ($)</label>
                       <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-emerald-400 text-right font-mono h-[38px] flex items-center justify-end mt-2">
                         {solarValue > 0 ? formatCurrency(solarValue) : "$0"}
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase text-sky-500 tracking-wider mb-1 block border-b border-sky-900/30 pb-1">Gen Efficiency</label>
+                      <label className="text-[11px] uppercase text-sky-500 tracking-wider mb-1 block border-b border-sky-900/30 pb-1">Gen Efficiency</label>
                       <div className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-sky-400 text-right font-mono h-[38px] flex items-center justify-end mt-2">
                         {efficiency > 0 ? `${efficiency.toFixed(1)}%` : "---"}
                       </div>
-                      <p className="text-[9px] text-slate-500 text-right mt-1">vs {projectedGen.toFixed(0)} kWh mod</p>
+                      <p className="text-[10px] text-slate-500 text-right mt-1">vs {projectedGen.toFixed(0)} kWh mod</p>
                     </div>
                   </div>
                 )}

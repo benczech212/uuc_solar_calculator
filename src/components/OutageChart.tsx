@@ -97,12 +97,12 @@ export function OutageChart({ data }: Props) {
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-2 border-l-4 border-l-amber-500 shadow-md">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-xs font-bold text-amber-500 uppercase tracking-widest">{selectedScenario.name} Selected</h3>
-              <button onClick={() => setSelectedScenario(null)} className="text-[10px] text-slate-500 hover:text-slate-300 uppercase tracking-wider">Clear</button>
+              <button onClick={() => setSelectedScenario(null)} className="text-[11px] text-slate-500 hover:text-slate-300 uppercase tracking-wider">Clear</button>
             </div>
             
             {selectedScenario.surplusKwHPerDay > 0 ? (
               <>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-2">Extra Daily Capacity</p>
+                <p className="text-[11px] text-slate-400 uppercase tracking-wider mt-2">Extra Daily Capacity</p>
                 <p className="text-xl text-emerald-400 font-mono">+{selectedScenario.surplusKwHPerDay.toFixed(1)} kWh <span className="text-xs text-emerald-500/50">/ day</span></p>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   System can power <b>{selectedScenario.name}</b> 24 hours a day AND fully charge <b className="text-emerald-400 font-mono">{Math.floor(selectedScenario.surplusKwHPerDay / 0.015).toLocaleString()}</b> phones per day.
@@ -110,7 +110,7 @@ export function OutageChart({ data }: Props) {
               </>
             ) : (
               <>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-2">Extra Daily Capacity</p>
+                <p className="text-[11px] text-slate-400 uppercase tracking-wider mt-2">Extra Daily Capacity</p>
                 <p className="text-xl text-rose-400 font-mono">0 kWh <span className="text-xs text-rose-500/50">/ day</span></p>
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   System can only sustain operation for <b className="text-amber-400 font-mono">{selectedScenario.hoursPerDay.toFixed(1)} hours per day</b>. There is NO extra capacity to charge phones without reducing survival time.
@@ -125,11 +125,11 @@ export function OutageChart({ data }: Props) {
         )}
 
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-           <p className="text-[10px] uppercase tracking-[0.15em] text-emerald-500 mb-1">Max Battery Potential</p>
+           <p className="text-[11px] uppercase tracking-[0.15em] text-emerald-500 mb-1">Max Battery Potential</p>
            <p className="text-3xl text-emerald-400 font-mono">
              {data.cellPhoneCharges.toLocaleString()} <span className="text-sm text-emerald-500/50">charges total</span>
            </p>
-           <p className="text-[10px] text-slate-500 mt-1 uppercase leading-snug">
+           <p className="text-[11px] text-slate-500 mt-1 uppercase leading-snug">
              Absolute total lifetime from 100% full battery<br/>(assumes 15Wh per full phone charge)
            </p>
         </div>
