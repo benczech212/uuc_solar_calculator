@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Sun, Download, Zap, Leaf, BarChart2, Activity, Calculator, ShieldAlert, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, FileText, User as UserIcon, Loader2, Copy, Check, Trash2 } from 'lucide-react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
+import { Sun, Download, Zap, Leaf, BarChart2, Activity, Calculator, ShieldAlert, Save, GitCompare, RotateCcw, LayoutDashboard, LineChart, FileText, User as UserIcon, Loader2, Copy, Check, Trash2, HelpCircle } from 'lucide-react';
 import { RoiChart } from './components/Chart';
 import { SensitivityChart } from './components/SensitivityChart';
 import { Equations } from './components/Equations';
@@ -16,6 +16,9 @@ import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { InputsPanel, VendorQuote, SectionKey, CompareKey } from './components/InputsPanel';
 import { ResultsSummary } from './components/ResultsSummary';
 import { Segmented, Modal, cn, btn } from './components/ui';
+import { GoalPicker, GoalSuggestions, ImpactContext } from './components/GoalPanel';
+import { Tour, TourStep, shouldAutoStartTour } from './components/Tour';
+import { GoalKey, goalByKey, leverImpacts, suggest, withParams, Suggestion } from './goals';
 import { exportToPDF } from './pdfExport';
 import { auth, signInWithGoogle, logout, saveConfiguration, updateConfiguration, getConfiguration, getUserConfigurations, SavedConfig } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -137,6 +140,22 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<ChartTab>('timeline');
   const [summaryTab, setSummaryTab] = useState<'metrics' | 'narrative'>('metrics');
+  const [goalKey, setGoalKey] = useState<GoalKey>(() => {
+    try { return (localStorage.getItem('UUC_SOLAR_GOAL') as GoalKey) || 'savings'; } catch { return 'savings'; }
+  });
+  const goal = goalByKey(goalKey) ?? goalByKey('savings');
+  const chooseGoal = (k: GoalKey) => {
+    setGoalKey(k);
+    try { localStorage.setItem('UUC_SOLAR_GOAL', k); } catch { /* not remembered this time */ }
+  };
+  const [undo, setUndo] = useState<{ title: string; params: SolarParams; applied: SolarParams } | null>(null);
+  const [touring, setTouring] = useState(false);
+  React.useEffect(() => {
+    if (shouldAutoStartTour()) {
+      const t = setTimeout(() => setTouring(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, []);
   const [highlightedEquationSection, setHighlightedEquationSection] = useState<string | null>(null);
 
   const [sectionsOpen, setSectionsOpen] = useState<Record<SectionKey, boolean>>({
@@ -303,6 +322,37 @@ export default function App() {
 
   const results = useMemo(() => calculateRoi(effectiveParams), [effectiveParams]);
 
+  // Goal hints and suggestions re-run the model dozens of times, so they trail slightly
+  // behind fast slider drags instead of slowing them down.
+  const deferredParams = useDeferredValue(effectiveParams);
+  const impacts = useMemo(() => leverImpacts(deferredParams, goal), [deferredParams, goal]);
+  const suggestions = useMemo(() => suggest(deferredParams, goal, DEFAULT_QUOTES), [deferredParams, goal]);
+  const goalNow = goal.value(results, effectiveParams);
+
+  const applySuggestion = (sg: Suggestion) => {
+    const next = withParams(params, sg.changes);
+    setUndo({ title: sg.title, params, applied: next });
+    setParams(next);
+    if (sg.changes.isFinanced) setSectionsOpen(prev => ({ ...prev, financing: true }));
+    if (sg.changes.hasBattery) setSectionsOpen(prev => ({ ...prev, storage: true }));
+    if (sg.changes.hasIncentives) setSectionsOpen(prev => ({ ...prev, incentives: true }));
+  };
+  // Undo only covers the suggestion itself: any later edit retires it.
+  React.useEffect(() => { if (undo && params !== undo.applied) setUndo(null); }, [params, undo]);
+
+  const tourSteps: TourStep[] = [
+    { title: 'Welcome to the UUC solar calculator', body: 'It estimates what solar panels would cost UUC, what they would save on electric bills, and how much carbon they would cut. This takes about a minute; you can skip it and reopen it from “How it works” at the top.', before: () => setAppScreen('solar') },
+    { target: 'goal-picker', title: 'Pick what matters most', body: 'Most money saved, best return, fastest payback, lowest carbon or least cash up front. Every input then shows how raising it moves that goal (green helps, red hurts), and the results suggest the changes that help most.' },
+    { target: 'section-quotes', title: 'Start from a real quote', body: 'These are the bids UUC received. Pick one, or set the system size and price yourself in step 2.', before: () => setSectionsOpen(prev => ({ ...prev, quotes: true })) },
+    { target: 'section-energy', title: 'Electricity use and rates', body: 'UUC’s own bills are already loaded, month by month. The rate is the all-in price per kWh from those bills.', before: () => setSectionsOpen(prev => ({ ...prev, energy: true })) },
+    { target: 'section-incentives', title: 'Switch on what applies', body: 'Tax credits, a loan, a battery, maintenance. “Compare” shows the results with and without that option side by side.' },
+    { target: 'slider-utilityRate', title: 'Every input explains itself', body: 'Click the (i) next to any input to see what it means, why its default was picked and where the number came from.', before: () => setSectionsOpen(prev => ({ ...prev, energy: true })) },
+    { target: 'results-summary', title: 'Results update instantly', body: 'Payback, savings and return change as you adjust anything. Click a number to see exactly how it’s worked out.' },
+    { target: 'goal-suggestions', title: 'Suggestions for your goal', body: 'The calculator tries quotes, system sizes, loan options and a battery, and lists the ones that most improve your goal. Apply one with a click, and undo it if you change your mind.' },
+    { target: 'chart-tabs', title: 'Look deeper', body: 'Savings over time, what-if scenarios, month-by-month balance, energy mix, outage backup and every formula.' },
+    { target: 'saved-setups', title: 'Save and share', body: 'Sign in with Google to save a setup and share a link to it. That’s the tour; enjoy exploring.' },
+  ];
+
   const compareResults = useMemo(() => {
     if (!comparisonMode) return null;
     const flag = SECTION_NAMES[comparisonMode].flag;
@@ -383,6 +433,9 @@ export default function App() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setTouring(true)} className={cn(btn.base, btn.secondary)} title="Take the tour">
+              <HelpCircle className="w-4 h-4" /> <span className="hidden sm:inline">How it works</span>
+            </button>
             <button type="button" onClick={() => setShowPdfPreview(true)} className={cn(btn.base, btn.secondary)}>
               <Download className="w-4 h-4" /> <span className="hidden sm:inline">PDF report</span>
             </button>
@@ -408,6 +461,8 @@ export default function App() {
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-5 space-y-3">
+                <GoalPicker goal={goal} onChange={chooseGoal} />
+                <ImpactContext.Provider value={impacts}>
                 <InputsPanel
                   params={params}
                   results={results}
@@ -420,8 +475,9 @@ export default function App() {
                   toggleCompare={(k) => setComparisonMode(m => m === k ? null : k)}
                   onOpenBills={() => setAppScreen('progress')}
                 />
+                </ImpactContext.Provider>
 
-                <section className="border border-slate-800 rounded-xl bg-slate-900/40 p-4 space-y-3">
+                <section id="saved-setups" className="border border-slate-800 rounded-xl bg-slate-900/40 p-4 space-y-3 scroll-mt-24">
                   <h2 className="text-sm font-semibold text-slate-100">Saved setups</h2>
                   {publicConfigs.length > 0 && (
                     <label className="block space-y-1">
@@ -516,6 +572,7 @@ export default function App() {
                     options={[{ value: 'metrics', label: 'Numbers' }, { value: 'narrative', label: 'In words' }]}
                   />
                 </div>
+                <div id="results-summary" className="scroll-mt-24">
                 {summaryTab === 'narrative' ? (
                   <ExecutiveSummary params={params} results={results} vendorName={vendorName} onNavigateToEquation={(k) => navigateToEquation(k)} />
                 ) : (
@@ -529,9 +586,20 @@ export default function App() {
                     financed={params.isFinanced}
                   />
                 )}
+                </div>
+
+                <GoalSuggestions
+                  goal={goal}
+                  current={goalNow}
+                  suggestions={suggestions}
+                  pending={deferredParams !== effectiveParams}
+                  onApply={applySuggestion}
+                  lastApplied={undo?.title}
+                  onUndo={undo ? () => { setParams(undo.params); setUndo(null); } : undefined}
+                />
 
                 <div ref={chartRef} className="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 sm:p-5 scroll-mt-24">
-                  <div className="flex flex-wrap gap-1 mb-3" role="tablist">
+                  <div id="chart-tabs" className="flex flex-wrap gap-1 mb-3 scroll-mt-24" role="tablist">
                     {CHART_TABS.map(t => (
                       <button
                         key={t.key}
@@ -718,6 +786,8 @@ export default function App() {
           </>}
         >This clears the defaults saved in this browser and reloads the original settings.</Modal>
       )}
+
+      {touring && <Tour steps={tourSteps} onClose={() => setTouring(false)} />}
 
       {showAdminDashboard && (
         <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowAdminDashboard(false)}>

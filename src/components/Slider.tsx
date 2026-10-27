@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn, InfoTip } from './ui';
 import { PARAM_INFO } from '../paramInfo';
+import { ImpactContext, ImpactHint } from './GoalPanel';
 
 interface SliderProps {
   id?: string;
@@ -18,9 +19,11 @@ interface SliderProps {
 
 // A labelled range input with an exact-value box. The box accepts values outside
 // the slider's range; the track just pins to the end. The (i) tooltip comes from
-// PARAM_INFO, keyed by the id without its "slider-" prefix.
+// PARAM_INFO and the goal hint from ImpactContext, both keyed by the id without its "slider-" prefix.
 export function Slider({ id, label, hint, value, min, max, step, unit, format, disabled, onChange }: SliderProps) {
   const [draft, setDraft] = React.useState<string | null>(null);
+  const key = id?.replace(/^slider-/, '');
+  const impact = React.useContext(ImpactContext)[key ?? ''];
   const pct = max > min ? Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100)) : 0;
   const fmt = format ?? ((v: number) => v.toLocaleString('en-US'));
 
@@ -30,9 +33,10 @@ export function Slider({ id, label, hint, value, min, max, step, unit, format, d
         <div className="min-w-0">
           <span className="flex items-center gap-1.5">
             <label htmlFor={id ? `${id}-input` : undefined} className="text-sm text-slate-200">{label}</label>
-            <InfoTip info={id ? PARAM_INFO[id.replace(/^slider-/, '')] : undefined} label={label} />
+            <InfoTip info={key ? PARAM_INFO[key] : undefined} label={label} />
           </span>
           {hint && <p className="text-xs text-slate-500">{hint}</p>}
+          {!disabled && <ImpactHint impact={impact} />}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <input
