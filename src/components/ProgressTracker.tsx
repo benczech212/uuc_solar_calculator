@@ -61,17 +61,24 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
         updateParam('historicalBills', newEntries.sort((a, b) => a.monthString.localeCompare(b.monthString)));
       }
     }
-  }, [entries, updateParam]);
+
+  }, []);
 
   const addEntry = () => {
     const d = new Date();
-    const defaultMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const thisMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const taken = new Set(entries.map(e => e.monthString));
+    let defaultMonth = thisMonth;
+    while (taken.has(defaultMonth)) {
+      const [y, m] = defaultMonth.split('-').map(Number);
+      defaultMonth = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+    }
 
     const newBill = {
       id: Date.now().toString(),
       monthString: defaultMonth,
-      billAmount: 150,
-      actualUsageKwh: 900
+      billAmount: 0,
+      actualUsageKwh: 0
     };
     updateParam('historicalBills', [...entries, newBill].sort((a, b) => a.monthString.localeCompare(b.monthString)));
   };
@@ -274,7 +281,7 @@ export function ProgressTracker({ params, updateParam, savedConfigs }: ProgressT
             </div>
             <div className="w-full h-72 font-mono text-xs">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                   <XAxis dataKey="month" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} />
                   <YAxis yAxisId="left" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />

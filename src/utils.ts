@@ -510,9 +510,12 @@ export function generateSensitivityData(params: SolarParams, variable: Sensitivi
     }
   };
 
+  const base = calculateRoi(params);
+
   if (variable === 'systemSize') {
-    const v = params.totalSystemSizeKw;
-    generateStep(Math.min(2, v * 0.5), Math.max(30, v * 1.5), 28, (val, p) => {
+    // Sweep around the system actually being modelled (panels or total), keeping its cost per watt.
+    const v = base.systemSizeKW || 10;
+    generateStep(v * 0.25, v * 2, 28, (val, p) => {
         p.inputMode = 'total';
         p.totalSystemSizeKw = val;
         p.totalGrossCost = val * 1000 * effectiveCostPerWatt;
@@ -520,6 +523,7 @@ export function generateSensitivityData(params: SolarParams, variable: Sensitivi
   } else if (variable === 'battery') {
     const v = params.batteryCapacityKwh;
     generateStep(0, Math.max(40, v * 1.5), 20, (val, p) => {
+        p.hasBattery = true;
         p.batteryCapacityKwh = val;
     });
   } else if (variable === 'interestRate') {
@@ -529,7 +533,7 @@ export function generateSensitivityData(params: SolarParams, variable: Sensitivi
     });
   } else if (variable === 'downPayment') {
     // Generate up to typical system cost
-    const maxDown = params.totalSystemSizeKw * 1000 * effectiveCostPerWatt;
+    const maxDown = base.systemCost;
     generateStep(0, maxDown, 20, (val, p) => {
         p.isFinanced = true;
         p.downPayment = val;

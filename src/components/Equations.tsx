@@ -152,7 +152,7 @@ export function Equations({
       <EquationBlock title="System Cost (Gross)" sectionKey="cost">
         <span className="text-slate-500">GrossCost = </span>
         (<Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × 1000 × <Var name="CostPerWatt" sld="slider-costPerWatt" sec="system" />) {params.hasBattery ? <>+ (<Var name="BatteryCapacity" sld="slider-batteryCapacityKwh" sec="storage" /> × <Var name="BatteryCostPerKwh" sld="slider-batteryCostPerKwh" sec="storage" />)</> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = ({results.systemSizeKW.toFixed(1)}kW × 1000 × ${params.costPerWatt.toFixed(2)}/W) {params.hasBattery ? `+ (${params.batteryCapacityKwh}kWh × $${params.batteryCostPerKwh}/kWh)` : ''}<br/>
           = {formatCurrency(results.systemCost)}
         </span>
@@ -161,7 +161,7 @@ export function Equations({
       <EquationBlock title="Net Investment" sectionKey="net">
         <span className="text-slate-500">NetCost = </span>
         <Var name="GrossCost" eq="cost" /> {params.hasIncentives ? <>- (<Var name="Federal Tax Credit" sld="slider-federalTaxCreditPercent" sec="incentives" /> + <Var name="State Rebate" sld="slider-stateRebateAmount" sec="incentives" />)</> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {formatCurrency(results.systemCost)} {params.hasIncentives ? `- (${formatCurrency(results.systemCost * (params.federalTaxCreditPercent / 100))} + ${formatCurrency(params.stateRebateAmount)})` : ''}<br/>
           = {formatCurrency(results.netCost)}
         </span>
@@ -170,7 +170,7 @@ export function Equations({
       <EquationBlock title="Yearly Generation" sectionKey="yearlygen">
         <span className="text-slate-500">YearlyGeneration = </span>
         <Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × 1500 kWh/kW {params.hasSolarEfficiency ? <>× <Var name="SolarEfficiency" sld="slider-solarEfficiency" sec="efficiency" /></> : ''}<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.systemSizeKW.toFixed(1)} kW × 1,500 {params.hasSolarEfficiency ? `× ${params.efficiencyMode === 'monthly' ? 'monthly profile' : `${params.solarEfficiency}%`}` : ''}<br/>
           = {results.annualGeneration.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
         </span>
@@ -179,7 +179,7 @@ export function Equations({
       <EquationBlock title="Year 1 Bill Without Solar" sectionKey="yr1without">
         <span className="text-slate-500">BillWithoutSolar = </span>
         <Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> × <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.annualUsage.toLocaleString()} kWh × ${activeRate.toFixed(4)}/kWh<br/>
           = {formatCurrency(results.annualUsage * activeRate)}
         </span>
@@ -188,7 +188,7 @@ export function Equations({
       <EquationBlock title="Year 1 Bill With Solar" sectionKey="yr1with">
         <span className="text-slate-500">BillWithSolar = </span>
         (<Var name="GridPurchase" eq="grid_purchase" /> × <Var name="UtilityRate" sld="slider-utilityRate" sec="energy" />) - (<Var name="GridSales" eq="gridsales" /> × <Var name="SellBackRate" sld="slider-sellBackRate" sec="energy" />)<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = ({results.annualGridPurchase.toLocaleString(undefined, {maximumFractionDigits:0})} kWh × ${activeRate.toFixed(4)}) - 
           ({results.annualGridSales.toLocaleString(undefined, {maximumFractionDigits:0})} kWh × ${params.sellBackRate.toFixed(2)})<br/>
           = {formatCurrency(results.annualGridPurchase * activeRate - results.annualGridSales * params.sellBackRate)}
@@ -198,7 +198,7 @@ export function Equations({
       <EquationBlock title="Grid Sales (Sold to Utility)" sectionKey="gridsales">
         <span className="text-slate-500">GridSales = </span>
         Sum over 365 Days of Max(0, DailySolarGen - DirectSolarUsage {params.hasBattery ? <>- BatteryCharge</> : ''})<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = The surplus solar energy generated during daylight hours that cannot be immediately consumed by the building's loads {params.hasBattery ? <>nor stored in the battery (due to it being fully charged)</> : <>and is exported to the grid</>}.<br/>
           = {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
         </span>
@@ -207,7 +207,7 @@ export function Equations({
       <EquationBlock title="Exported & Sold" sectionKey="exported_sold">
         <span className="text-slate-500">ExportedRevenue = </span>
         <Var name="GridSales" eq="gridsales" /> × <Var name="SellBackRate" sld="slider-sellBackRate" sec="energy" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.annualGridSales.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh × ${params.sellBackRate.toFixed(2)}/kWh<br/>
           = {formatCurrency(results.annualGridSales * params.sellBackRate)}/year
         </span>
@@ -216,7 +216,7 @@ export function Equations({
       <EquationBlock title="Battery Utilization" sectionKey="battery_utilization">
         <span className="text-slate-500">BatteryDraw = </span>
         Cumulative annual storage draw to cover building loads. Managed by <Var name="BatteryCapacity" sld="slider-batteryCapacityKwh" sec="storage" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.annualBatteryDraw.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
         </span>
       </EquationBlock>
@@ -224,7 +224,7 @@ export function Equations({
       <EquationBlock title="Grid Purchase Needed" sectionKey="grid_purchase">
         <span className="text-slate-500">GridPurchase = </span>
         Total usage unmet by immediate solar generation or <Var name="BatteryDraw" eq="battery_utilization" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.annualGridPurchase.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year<br/>
           ≈ {formatCurrency(results.annualGridPurchase * activeRate)} spent on utility purchases (Year 1)
         </span>
@@ -233,7 +233,7 @@ export function Equations({
       <EquationBlock title="Year 1 Savings" sectionKey="yr1savings">
         <span className="text-slate-500">Year1Savings = </span>
         <Var name="BillWithoutSolar" eq="yr1without" /> - <Var name="BillWithSolar" eq="yr1with" /> - <Var name="AnnualMaintenance" sld="slider-annualMaintenanceCost" sec="maintenance" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {formatCurrency(results.annualUsage * activeRate)} - 
           {formatCurrency(results.annualGridPurchase * activeRate - results.annualGridSales * params.sellBackRate)} - 
           {formatCurrency(params.hasMaintenance ? params.annualMaintenanceCost : 0)}<br/>
@@ -253,7 +253,7 @@ export function Equations({
         <Var name="CumulativeSavings" eq="cum_savings" />_(Y-1) + AnnualSavings_Y<br/>
         <span className="text-slate-500">Year 25 Total Cumulative Savings = </span>
         Total savings accumulated over 25 years<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {formatCurrency(results.total25YearSavings)}
         </span>
       </EquationBlock>
@@ -261,17 +261,17 @@ export function Equations({
       <EquationBlock title="Payback Period" sectionKey="payback">
         <span className="text-slate-500">PaybackPeriod = </span>
         Year where <Var name="CumulativeSavings" eq="cum_savings" /> &ge; <Var name="NetCost" eq="net" /><br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.paybackPeriod > 0 
               ? (results.paybackPeriod < 1 ? `${(results.paybackPeriod * 12).toFixed(1)} months` : `${results.paybackPeriod.toFixed(1)} years`) 
-              : 'Does not break even within 30 years'}
+              : 'Does not break even within 25 years'}
         </span>
       </EquationBlock>
 
       <EquationBlock title="25-Year ROI" sectionKey="25yr_roi">
         <span className="text-slate-500">25YearROI = </span>
         (25-Year Net Profit ÷ Total Costs Incurred) × 100<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = ({formatCurrency(results.total25YearSavings)} ÷ ({formatCurrency(results.systemCost)} + <Var name="AnnualMaintenance" sld="slider-annualMaintenanceCost" sec="maintenance" /> × 25)) × 100<br/>
           = {results.roiPercentage.toFixed(1)}%
         </span>
@@ -280,7 +280,7 @@ export function Equations({
       <EquationBlock title="Renewable Mix (Green Energy %)" sectionKey="renewable_mix">
         <span className="text-slate-500">RenewableMix% = </span>
         ((<Var name="SolarGenerationUsed" eq="yearlygen" /> + (<Var name="GridPurchase" eq="grid_purchase" /> × <Var name="GridRenewable%" sld="slider-gridRenewablePercentage" sec="energy" />)) ÷ <Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" />) × 100<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.co2Impact?.newRenewablePercent.toFixed(1)}% green energy share of total building loads
         </span>
       </EquationBlock>
@@ -290,7 +290,7 @@ export function Equations({
         (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> × <Var name="GridRenewable%" sld="slider-gridRenewablePercentage" sec="energy" />)) - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - NewRenewableKwh)<br/>
         <span className="text-slate-500">CO2TonsSaved = </span>
         KWhSaved × 0.00043 (tons/kWh)<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.co2Impact?.co2SavedTonsPerYear.toFixed(2)} tons avoided per year
         </span>
       </EquationBlock>
@@ -298,7 +298,7 @@ export function Equations({
       <EquationBlock title="CO2 Impact (Equivalent Homes)" sectionKey="co2homes">
         <span className="text-slate-500">EquivalentHomes = </span>
         <Var name="CO2TonsSaved" eq="co2" /> / 4.515<br/>
-        <span className="text-emerald-400 mt-3 block/80 text-[15px]">
+        <span className="text-emerald-400 mt-3 block text-[15px]">
           = {(results.co2Impact?.co2SavedTonsPerYear / 4.515).toFixed(1)} homes per year
         </span>
       </EquationBlock>

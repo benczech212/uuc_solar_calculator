@@ -31,7 +31,9 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
     return "";
   };
 
-  const validPaybacks = data.filter(d => d.paybackPeriod > 0 && d.paybackPeriod < 30);
+  const varName = getXAxisLabel().replace(/\s*\(.*\)/, '').toLowerCase();
+
+  const validPaybacks =data.filter(d => d.paybackPeriod > 0 && d.paybackPeriod < 30);
   const minPayback = validPaybacks.length > 0 ? validPaybacks.reduce((min, p) => p.paybackPeriod < min.paybackPeriod ? p : min, validPaybacks[0]) : null;
 
   const validValidProfits = data.filter(d => d.netCost > 0);
@@ -40,20 +42,20 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
   const activeYAxis = metric === 'slope' ? 'slope' : metric === 'breakeven' ? 'payback' : 'profit';
 
   return (
-    <div className="w-full flex-col items-center">
+    <div className="w-full flex flex-col">
     
     <div className="bg-slate-800/30 border border-slate-700/50 p-4 rounded-xl mt-4 text-xs text-slate-300 leading-relaxed">
-      {metric === 'both' && <p><span className="text-amber-400 font-semibold tracking-wide">ALL METRICS:</span> Analyzing the intersection of <span className="text-emerald-400">25-Year Value</span> and <span className="text-amber-500">Break-even time</span> across different '{getXAxisLabel().replace(/\s*\(.*\)/, '')}' settings to find the optimal balance between upfront cost and long-term savings.</p>}
-      {metric === 'profit' && <p><span className="text-emerald-400 font-semibold tracking-wide">25-YEAR VALUE:</span> Shows the total net profit after 25 years. The highest point indicates the absolute best long-term financial return for '{getXAxisLabel().replace(/\s*\(.*\)/, '')}'.</p>}
-      {metric === 'breakeven' && <p><span className="text-amber-500 font-semibold tracking-wide">BREAK-EVEN:</span> Shows how many years it takes for the system to pay for itself. The lowest point indicates the fastest return on investment for '{getXAxisLabel().replace(/\s*\(.*\)/, '')}'.</p>}
-      {metric === 'slope' && <p><span className="text-purple-400 font-semibold tracking-wide">PROFIT SLOPE:</span> Shows the rate of change of the 25-Year Value. When the slope crosses zero (drops from positive to negative), you've reached the point of maximum return where adding more '{getXAxisLabel().replace(/\s*\(.*\)/, '')}' begins to destroy value.</p>}
+      {metric === 'both' && <p>How <span className="text-emerald-400">25-year savings</span> and <span className="text-amber-400">payback time</span> change as you vary the {varName}. The blue line is your current setting.</p>}
+      {metric === 'profit' && <p>Total <span className="text-emerald-400">savings after 25 years</span> at each {varName}. The highest point is the best long-term value.</p>}
+      {metric === 'breakeven' && <p>Years until the system <span className="text-amber-400">pays for itself</span> at each {varName}. The lowest point pays back fastest.</p>}
+      {metric === 'slope' && <p>How much each extra unit of {varName} adds to 25-year savings. Where the line drops below zero, going bigger starts to lose money.</p>}
     </div>
 
-    <div className="w-full h-64 sm:h-72 lg:h-56 xl:h-[260px] h-60 mt-4 font-mono text-xs">
+    <div className="w-full h-72 mt-4 font-mono text-xs">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
-          margin={{ top: 20, right: 20, left: -20, bottom: 20 }}
+          margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
           <XAxis 
@@ -87,7 +89,7 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
             <YAxis 
               yAxisId="payback"
               orientation="right"
-              tickFormatter={(value) => `${value}y`} 
+              tickFormatter={(value) => `${Number(value).toFixed(1)}y`} 
               stroke="#f59e0b"
               tickLine={false}
               axisLine={false}
@@ -201,14 +203,14 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
     </div>
     
     <div className="mt-8 bg-slate-900/50 rounded-xl p-4 border border-slate-800 flex flex-col items-center">
-      <h3 className="text-sm font-semibold text-slate-200 mb-3 uppercase tracking-wider text-center">Identified Extrema (Click to Apply)</h3>
+      <h3 className="text-sm font-semibold text-slate-200 mb-3 uppercase tracking-wider text-center">Best settings found (click to use)</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
         {maxProfit && (
           <button 
             onClick={() => onApplyExtrema && onApplyExtrema(maxProfit.xValue)}
             className="bg-slate-950 p-4 rounded-lg border border-emerald-900/50 hover:border-emerald-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
           >
-            <span className="text-[11px] uppercase text-emerald-500 font-bold tracking-widest mb-1">Max 25-Yr Return</span>
+            <span className="text-[11px] uppercase text-emerald-500 font-bold tracking-widest mb-1">Most 25-year savings</span>
             <span className="text-xl text-emerald-400 font-mono tracking-tight">{formatCurrency(maxProfit.netProfit)}</span>
             <span className="text-xs text-slate-400 mt-1">at {formatXAxis(maxProfit.xValue)}</span>
           </button>
@@ -218,7 +220,7 @@ export function SensitivityChart({ data, variable, metric, onApplyExtrema, curre
             onClick={() => onApplyExtrema && onApplyExtrema(minPayback.xValue)}
             className="bg-slate-950 p-4 rounded-lg border border-amber-900/50 hover:border-amber-500 shadow-sm flex flex-col items-center transition-colors cursor-pointer"
           >
-            <span className="text-[11px] uppercase text-amber-500 font-bold tracking-widest mb-1">Fastest Break-even</span>
+            <span className="text-[11px] uppercase text-amber-500 font-bold tracking-widest mb-1">Fastest payback</span>
             <span className="text-xl text-amber-400 font-mono tracking-tight">{minPayback.paybackPeriod.toFixed(1)} <span className="text-sm">Yrs</span></span>
             <span className="text-xs text-slate-400 mt-1">at {formatXAxis(minPayback.xValue)}</span>
           </button>

@@ -38,7 +38,7 @@ export function OutageChart({ data }: Props) {
 
   if (data.scenarios.every(s => s.hoursPerDay === 0)) {
     return (
-      <div className="w-full h-64 sm:h-72 lg:h-56 xl:h-[260px] h-60 mt-4 flex flex-col items-center justify-center text-slate-500 font-mono text-sm bg-slate-900/20 rounded-xl border border-slate-800 border-dashed">
+      <div className="w-full h-72 mt-4 flex flex-col items-center justify-center text-slate-500 font-mono text-sm bg-slate-900/20 rounded-xl border border-slate-800 border-dashed">
         <span className="text-amber-500 mb-2">No Battery Storage Detected</span>
         <span className="text-center px-4">Grid-tied solar systems automatically disconnect during outages for safety.</span>
         <span className="text-center px-4">Add Battery Capacity in the parameters to view resilience data.</span>
@@ -52,7 +52,7 @@ export function OutageChart({ data }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data.scenarios}
-            margin={{ top: 20, right: 20, left: -20, bottom: 20 }}
+            margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
             <XAxis 

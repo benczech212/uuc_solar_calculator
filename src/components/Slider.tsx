@@ -1,90 +1,76 @@
-import { Lock, Unlock, Save } from 'lucide-react';
-import { ComponentProps } from 'react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import React from 'react';
+import { cn } from './ui';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-interface SliderProps extends ComponentProps<'input'> {
+interface SliderProps {
+  id?: string;
   label: string;
-  valueDisplay: string;
-  isLocked?: boolean;
-  onToggleLock?: () => void;
-  onSetDefault?: () => void;
-  paramKey?: string;
+  hint?: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  unit?: string;
+  format?: (v: number) => string;
+  disabled?: boolean;
+  onChange: (v: number) => void;
 }
 
-export function Slider({ label, valueDisplay, isLocked, onToggleLock, onSetDefault, paramKey, className, id, ...props }: SliderProps) {
-  const min = props.min ? Number(props.min) : 0;
-  const max = props.max ? Number(props.max) : 100;
-  const val = props.value ? Number(props.value) : 0;
-  
-  const percentage = ((val - min) / (max - min)) * 100;
+// A labelled range input with an exact-value box. The box accepts values outside
+// the slider's range; the track just pins to the end.
+export function Slider({ id, label, hint, value, min, max, step, unit, format, disabled, onChange }: SliderProps) {
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const pct = max > min ? Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100)) : 0;
+  const fmt = format ?? ((v: number) => v.toLocaleString('en-US'));
 
   return (
-    <div id={id} className={cn("space-y-3 transition-all duration-300", className)}>
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          {onToggleLock && (
-            <button 
-              onClick={onToggleLock} 
-              className={cn("p-1 rounded transition-colors", isLocked ? "bg-rose-500/20 text-rose-400" : "bg-slate-800/50 text-slate-500 hover:text-slate-300")}
-              title={isLocked ? "Unlock parameter" : "Lock parameter"}
-            >
-              {isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-            </button>
-          )}
-          <label className="text-xs uppercase tracking-wider text-slate-400">{label}</label>
+    <div id={id} className={cn('space-y-2 rounded-xl transition-all', disabled && 'opacity-50')}>
+      <div className="flex justify-between items-start gap-3">
+        <div className="min-w-0">
+          <label htmlFor={id ? `${id}-input` : undefined} className="block text-sm text-slate-200">{label}</label>
+          {hint && <p className="text-xs text-slate-500">{hint}</p>}
         </div>
-        <div className="flex items-center gap-2">
-          {onSetDefault && (
-            <button
-              onClick={onSetDefault}
-              className="p-1 rounded bg-slate-800/50 text-slate-500 hover:bg-amber-500/20 hover:text-amber-400 transition-colors"
-              title="Set as default"
-            >
-              <Save className="w-3 h-3" />
-            </button>
-          )}
+        <div className="flex items-center gap-1.5 shrink-0">
           <input
+            id={id ? `${id}-input` : undefined}
             type="number"
-            value={val}
-            min={props.min}
-            max={props.max}
-            step={props.step}
-            onChange={props.onChange}
-            disabled={isLocked}
-            className="w-16 sm:w-24 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded text-xs text-white text-right font-mono py-1 px-1.5 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+            inputMode="decimal"
+            value={draft ?? String(value)}
+            step={step}
+            disabled={disabled}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const n = Number(e.target.value);
+              if (e.target.value !== '' && Number.isFinite(n)) onChange(n);
+            }}
+            onBlur={() => setDraft(null)}
+            className="w-24 bg-slate-950 border border-slate-700 hover:border-slate-500 rounded-md text-sm text-white text-right font-mono py-1 px-2 focus:outline-none focus:border-amber-500"
           />
-          <span className="text-[11px] text-slate-500 font-mono hidden sm:inline text-right min-w-[3rem]">
-            = {valueDisplay}
-          </span>
+          {unit && <span className="text-xs text-slate-500 w-10">{unit}</span>}
         </div>
       </div>
-      <div className="relative w-full h-6 flex items-center">
-        <div className={cn("absolute w-full h-1 rounded-lg overflow-hidden", isLocked ? "bg-slate-800" : "bg-slate-700")}>
-          <div 
-            className={cn("absolute top-0 left-0 h-full rounded-full", isLocked ? "bg-rose-900/50" : "bg-amber-500")}
-            style={{ width: `${percentage}%` }}
-          />
+      <div className="relative w-full h-5 flex items-center">
+        <div className="absolute w-full h-1.5 rounded-full bg-slate-700 overflow-hidden">
+          <div className="h-full bg-amber-500" style={{ width: `${pct}%` }} />
         </div>
-        <div 
-          className={cn("absolute h-4 w-4 rounded-full border-2 pointer-events-none z-0", 
-            isLocked ? "bg-slate-800 border-rose-900/50" : "bg-white shadow-[0_0_10px_#fbbf24] border-amber-500")}
-          style={{ left: `calc(${percentage}% - 8px)` }}
+        <div
+          className="absolute h-4 w-4 rounded-full bg-white border-2 border-amber-500 shadow pointer-events-none"
+          style={{ left: `calc(${pct}% - 8px)` }}
         />
-        <input 
+        <input
           type="range"
-          className={cn("absolute top-0 left-0 w-full h-full opacity-0 z-10", isLocked ? "cursor-not-allowed" : "cursor-pointer")}
-          disabled={isLocked}
-          {...props}
+          aria-label={label}
+          min={min}
+          max={max}
+          step={step}
+          value={Math.min(max, Math.max(min, value))}
+          disabled={disabled}
+          onChange={(e) => { setDraft(null); onChange(Number(e.target.value)); }}
+          className="absolute inset-0 w-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
         />
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500 font-mono">
-        <span>{props.min}</span>
-        <span>{props.max}{props.max === 100 || props.max === 10 ? '%' : '+'}</span>
+      <div className="flex justify-between text-xs text-slate-500 font-mono">
+        <span>{fmt(min)}</span>
+        <span>{fmt(max)}</span>
       </div>
     </div>
   );
