@@ -81,7 +81,7 @@ export function RoiChart({ data, paybackPeriod, compareData, comparePaybackPerio
   };
 
   return (
-    <div className="w-full h-64 sm:h-72 lg:h-56 xl:h-[260px] h-60 mt-4 font-mono text-xs flex flex-col">
+    <div className="w-full h-72 mt-4 font-mono text-xs flex flex-col">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={mergedData}

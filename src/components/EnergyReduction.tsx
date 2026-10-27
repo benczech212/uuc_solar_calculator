@@ -114,22 +114,47 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
           </button>
         </div>
 
-        <div className="w-full h-64 mb-8 bg-slate-950/40 border border-slate-800 p-4 rounded-xl font-mono text-xs">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-              <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} />
-              <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
-                itemStyle={{ fontFamily: 'monospace' }}
-                formatter={(value: number, name: string) => name.includes('$') ? formatCurrency(value) : value.toLocaleString('en-US', {maximumFractionDigits: 0})}
-              />
-              <Legend iconType="circle" />
-              <Bar dataKey="Before" name="Before Upgrades" fill="#64748b" radius={[4, 4, 0, 0]} maxBarSize={60} />
-              <Bar dataKey="After" name="After Upgrades" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="h-56 bg-slate-950/40 border border-slate-800 p-4 rounded-xl font-mono text-xs flex flex-col">
+            <p className="font-sans text-sm text-slate-300 mb-2">Yearly electricity use (kWh)</p>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[chartData[0]]} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => Math.round(v).toLocaleString('en-US')} width={70} />
+                  <Tooltip
+                    cursor={{ fill: '#1e293b55' }}
+                    contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
+                    formatter={(value: number) => Math.round(value).toLocaleString('en-US')}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="Before" name="Before upgrades" fill="#64748b" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                  <Bar dataKey="After" name="After upgrades" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="h-56 bg-slate-950/40 border border-slate-800 p-4 rounded-xl font-mono text-xs flex flex-col">
+            <p className="font-sans text-sm text-slate-300 mb-2">Yearly electric bill</p>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[chartData[1]]} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCurrency(v)} width={70} />
+                  <Tooltip
+                    cursor={{ fill: '#1e293b55' }}
+                    contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '8px' }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="Before" name="Before upgrades" fill="#64748b" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                  <Bar dataKey="After" name="After upgrades" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8 mt-6">

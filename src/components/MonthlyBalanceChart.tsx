@@ -43,6 +43,10 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
   const bestMonth = [...chartData].sort((a, b) => b.balance - a.balance)[0];
   const worstMonth = [...chartData].sort((a, b) => a.balance - b.balance)[0];
 
+  if (!bestMonth || !worstMonth) {
+    return <p className="text-sm text-slate-500 py-12 text-center">No monthly data to show yet.</p>;
+  }
+
   const netAnnualBalance = results.annualGeneration - results.annualUsage;
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -107,7 +111,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
             </div>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-xl font-mono font-bold text-emerald-400">
-                +{bestMonth.balance.toLocaleString()}
+                {bestMonth.balance > 0 ? '+' : ''}{bestMonth.balance.toLocaleString()}
               </span>
               <span className="text-xs text-emerald-500/70 font-sans">kWh ({bestMonth.month})</span>
             </div>
@@ -146,7 +150,7 @@ export function MonthlyBalanceChart({ data, results }: MonthlyBalanceChartProps)
           </span>
         </h4>
         
-        <div className="w-full h-64 sm:h-72 lg:h-56 xl:h-[260px] h-60">
+        <div className="w-full h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
