@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ParamInfo } from '../paramInfo';
 import { ChevronDown, GitCompare } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -57,12 +58,13 @@ interface SectionProps {
   comparing?: boolean;
   onCompare?: () => void;
   headerExtra?: React.ReactNode;
+  info?: ParamInfo;
   children: React.ReactNode;
 }
 
 // A collapsible group of inputs. Optional sections carry an on/off switch and a
 // "Compare" button that shows the results with that section flipped.
-export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, onToggleEnabled, comparing, onCompare, headerExtra, children }: SectionProps) {
+export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, onToggleEnabled, comparing, onCompare, headerExtra, info, children }: SectionProps) {
   const optional = onToggleEnabled !== undefined;
   return (
     <section id={id} className="border border-slate-800 rounded-xl bg-slate-900/40 scroll-mt-4">
@@ -75,6 +77,7 @@ export function Section({ id, title, hint, icon, open, onToggleOpen, enabled, on
             {hint && <span className="block text-xs text-slate-500 truncate">{hint}</span>}
           </span>
         </button>
+        <InfoTip info={info} label={title} />
         {headerExtra}
         {onCompare && (
           <button
@@ -145,3 +148,60 @@ export const btn = {
   danger: 'bg-red-600 hover:bg-red-500 text-white border-red-500',
   ghost: 'text-slate-300 hover:text-white border-transparent',
 };
+
+// An (i) button that explains an input: what it means, why the default was picked,
+// and where the number came from. Opens on hover or tap; tap again or Esc to close.
+export function InfoTip({ info, label }: { info?: ParamInfo; label: string }) {
+  const [open, setOpen] = React.useState(false);
+  const [pinned, setPinned] = React.useState(false);
+  const ref = React.useRef<HTMLSpanElement>(null);
+
+  React.useEffect(() => {
+    if (!pinned) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) {
+        setPinned(false);
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', close); };
+  }, [pinned]);
+
+  if (!info) return null;
+  const show = open || pinned;
+  return (
+    <span ref={ref} className="relative inline-flex" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        aria-label={`About ${label}`}
+        aria-expanded={show}
+        onClick={(e) => { e.stopPropagation(); setPinned(p => !p); }}
+        className={cn('w-4 h-4 rounded-full border text-[10px] leading-none font-semibold flex items-center justify-center transition-colors',
+          show ? 'border-amber-400 text-amber-300' : 'border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-200')}
+      >i</button>
+      {show && (
+        <span
+          role="tooltip"
+          onClick={e => e.stopPropagation()}
+          className="absolute z-50 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 top-6 w-72 max-w-[80vw] bg-slate-950 border border-slate-700 rounded-lg p-3 shadow-xl text-left text-xs text-slate-300 font-normal normal-case tracking-normal space-y-2"
+        >
+          <span className="block">{info.what}</span>
+          <span className="block"><span className="text-amber-300 font-semibold">Default: </span>{info.why}</span>
+          {info.sources && info.sources.length > 0 && (
+            <span className="block text-slate-500">
+              Source{info.sources.length > 1 ? 's' : ''}:{' '}
+              {info.sources.map((s, i) => (
+                <React.Fragment key={s.label}>
+                  {i > 0 && '; '}
+                  {s.url ? <a href={s.url} target="_blank" rel="noreferrer" className="underline hover:text-slate-200">{s.label}</a> : s.label}
+                </React.Fragment>
+              ))}
+            </span>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}

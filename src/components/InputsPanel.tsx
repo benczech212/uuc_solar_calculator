@@ -1,7 +1,8 @@
 import React from 'react';
 import { Sun, Zap, Receipt, Wrench, Battery, PiggyBank, FileText, Landmark, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Slider } from './Slider';
-import { Section, Segmented, Toggle, cn, btn } from './ui';
+import { Section, Segmented, Toggle, InfoTip, cn, btn } from './ui';
+import { PARAM_INFO } from '../paramInfo';
 import { SolarParams, RoiResults } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -63,7 +64,7 @@ function LumpSums({ params, updateParam }: Pick<InputsPanelProps, 'params' | 'up
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-slate-200">Extra loan payments</p>
+      <p className="flex items-center gap-1.5 text-sm text-slate-200">Extra loan payments <InfoTip info={PARAM_INFO.lumpSums} label="extra loan payments" /></p>
       <p className="text-xs text-slate-500">One-time payments toward the loan, such as a grant or a fundraising drive.</p>
       <div className="flex gap-2">
         <select
@@ -126,6 +127,7 @@ export function InputsPanel(props: InputsPanelProps) {
         title="1. Start from a quote"
         hint="Pick a vendor quote, or enter your own system below"
         icon={<FileText className="w-4 h-4 text-emerald-400" />}
+        info={PARAM_INFO.quotes}
         open={sectionsOpen.quotes}
         onToggleOpen={() => toggleSection('quotes')}
       >
@@ -195,7 +197,7 @@ export function InputsPanel(props: InputsPanelProps) {
       >
         <div className="space-y-5 pt-3">
           <div className="space-y-2">
-            <p className="text-sm text-slate-200">How should usage be entered?</p>
+            <p className="flex items-center gap-1.5 text-sm text-slate-200">How should usage be entered? <InfoTip info={PARAM_INFO.usageMode} label="usage entry" /></p>
             <Segmented
               className="w-full"
               value={params.usageMode}
@@ -237,7 +239,7 @@ export function InputsPanel(props: InputsPanelProps) {
                   value={params.monthlyUsageKwh} onChange={(v) => updateParam('monthlyUsageKwh', v)} />
               ) : (
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-200">Electricity use by month (kWh)</p>
+                  <p className="flex items-center gap-1.5 text-sm text-slate-200">Electricity use by month (kWh) <InfoTip info={PARAM_INFO.monthlyUsageProfile} label="monthly use" /></p>
                   <MonthGrid round values={params.monthlyUsageProfile} onChange={(v) => updateParam('monthlyUsageProfile', v)} />
                 </div>
               )}
@@ -249,7 +251,7 @@ export function InputsPanel(props: InputsPanelProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-slate-200">Same rate for power sold back</p>
+                <p className="flex items-center gap-1.5 text-sm text-slate-200">Same rate for power sold back <InfoTip info={PARAM_INFO.linkSellBack} label="net metering" /></p>
                 <p className="text-xs text-slate-500">Net metering credits extra solar at the retail rate</p>
               </div>
               <Toggle checked={params.hasLinkedSellBackRate} onChange={(v) => updateParam('hasLinkedSellBackRate', v)} label="Link sell-back rate to utility rate" />
@@ -328,10 +330,18 @@ export function InputsPanel(props: InputsPanelProps) {
 
       <div className="flex items-center justify-between gap-3 border border-slate-800 rounded-xl bg-slate-900/40 px-4 py-3">
         <div>
-          <p className="text-sm text-slate-200">Seasonal sunshine</p>
+          <p className="flex items-center gap-1.5 text-sm text-slate-200">Seasonal sunshine <InfoTip info={PARAM_INFO.seasonal} label="seasonal sunshine" /></p>
           <p className="text-xs text-slate-500">More output in summer, less in winter, instead of the same every month</p>
         </div>
         <Toggle checked={params.useSeasonalGenerationCurve} onChange={(v) => updateParam('useSeasonalGenerationCurve', v)} label="Seasonal sunshine" />
+      </div>
+
+      <div className="border border-slate-800 rounded-xl bg-slate-900/40 px-4 py-3 space-y-2">
+        <p className="text-sm text-slate-200">Fixed assumptions</p>
+        <p className="text-xs text-slate-500">Built into the model, not adjustable here.</p>
+        {([['solarYield', '1,500 kWh per kW of panels per year'], ['co2', '0.000366 t CO₂ per grid kWh (Florida)'], ['homes', '4.8 t CO₂ per home, for the homes comparison']] as const).map(([key, text]) => (
+          <p key={key} className="flex items-center gap-1.5 text-xs text-slate-400">{text} <InfoTip info={PARAM_INFO[key]} label={text} /></p>
+        ))}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Info } from 'lucide-react';
 import { SolarParams, RoiResults } from '../types';
-import { formatCurrency } from '../utils';
+import { formatCurrency, HOME_ELECTRIC_CO2_TONS } from '../utils';
 
 interface ExecutiveSummaryProps {
   params: SolarParams;
@@ -17,7 +17,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ params, resu
     : params.costPerWatt;
     
   const netProfit = results.total25YearSavings - results.netCost;
-  const homesEquivalent = (results.co2Impact.co2SavedTonsPerYear / 4.515).toFixed(1); // approx 4.515 tons per US home energy use
+  const homesEquivalent = (results.co2Impact.co2SavedTonsPerYear / HOME_ELECTRIC_CO2_TONS).toFixed(1);
 
   // Find peak surplus and deficit months dynamically
   const balanceData = results.monthlyEnergyData.map(m => {
