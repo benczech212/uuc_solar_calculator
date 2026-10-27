@@ -1,7 +1,7 @@
 import React from 'react';
 import { EnergyReductionProject, SolarParams } from '../types';
 import { Zap, Plus, Trash2, ShieldAlert, Home } from 'lucide-react';
-import { formatCurrency, calculateReductionKwh, getActiveEnergyParams } from '../utils';
+import { formatCurrency, calculateReductionKwh, getActiveEnergyParams, GRID_CO2_TONS_PER_KWH, HOME_ELECTRIC_CO2_TONS } from '../utils';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 interface EnergyReductionProps {
@@ -91,7 +91,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
     .reduce((acc, p) => {
          const savingsKwh = calculateReductionKwh(p, baseAnnualKwh);
          return acc + (savingsKwh * (p.lifespanYears || 10));
-    }, 0) * (1 - params.gridRenewablePercentage / 100) * 0.00043;
+    }, 0) * (1 - params.gridRenewablePercentage / 100) * GRID_CO2_TONS_PER_KWH;
 
   const chartData = [
     { name: 'Annual kWh', Before: baseAnnualKwh, After: newAnnualKwh },
@@ -195,7 +195,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
               <Home className="w-3 h-3 text-sky-400/80" />
               <p className="text-[11px] uppercase text-sky-400/80">Homes Offset</p>
             </div>
-            <p className="text-xl font-mono text-sky-400">{(totalLifespanCo2Tons / 4.515).toFixed(1)} <span className="text-xs text-sky-500/50">home-yrs</span></p>
+            <p className="text-xl font-mono text-sky-400">{(totalLifespanCo2Tons / HOME_ELECTRIC_CO2_TONS).toFixed(1)} <span className="text-xs text-sky-500/50">home-yrs</span></p>
             <p className="text-xs text-sky-500/70 mt-1">Equivalent lifespan savings</p>
           </div>
         </div>
@@ -295,7 +295,7 @@ export function EnergyReduction({ params, projects, setProjects, updateParam }: 
                       -{Math.round(calculateReductionKwh(p, baseAnnualKwh)).toLocaleString()} kWh/yr
                     </p>
                     <p className="text-[11px] text-teal-400 font-mono">
-                      -{((calculateReductionKwh(p, baseAnnualKwh) * (p.lifespanYears || 10)) * (1 - params.gridRenewablePercentage / 100) * 0.00043).toFixed(1)}t CO₂ total
+                      -{((calculateReductionKwh(p, baseAnnualKwh) * (p.lifespanYears || 10)) * (1 - params.gridRenewablePercentage / 100) * GRID_CO2_TONS_PER_KWH).toFixed(1)}t CO₂ total
                     </p>
                     <p className="text-[11px] text-purple-400 font-mono">
                       {(() => {

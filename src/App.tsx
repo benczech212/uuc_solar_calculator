@@ -26,11 +26,12 @@ const DEFAULT_QUOTES: VendorQuote[] = [
   { id: '3', companyName: 'Bay Area', systemSizeKw: 75.5, totalCost: 218976 },
 ];
 
+// Why each default was chosen, with sources: src/paramInfo.ts.
 const DEFAULT_PARAMS: SolarParams = {
   inputMode: 'detailed',
   panelWattage: 400,
   numberOfPanels: 110,
-  costPerWatt: 2.27,
+  costPerWatt: 2.39,
   totalSystemSizeKw: 44.0,
   totalGrossCost: 99880,
   hasSolarEfficiency: false,
@@ -75,17 +76,17 @@ const DEFAULT_PARAMS: SolarParams = {
   solarSwitchDate: '',
   useReducedEnergyProfile: false,
   
-  utilityRate: 0.16,
+  utilityRate: 0.20,
   annualBillIncrease: 3,
   
   hasBattery: false,
   batteryCapacityKwh: 0,
   batteryCostPerKwh: 400,
-  sellBackRate: 0.16,
+  sellBackRate: 0.20,
   hasLinkedSellBackRate: true,
 
   hasMaintenance: false,
-  annualMaintenanceCost: 150,
+  annualMaintenanceCost: 750,
   
   isFinanced: false,
   loanTermYears: 10,
@@ -93,7 +94,7 @@ const DEFAULT_PARAMS: SolarParams = {
   downPayment: 0,
   lumpSumPayments: [],
 
-  gridRenewablePercentage: 80,
+  gridRenewablePercentage: 10,
 };
 
 const getInitialDefaults = (): SolarParams => {

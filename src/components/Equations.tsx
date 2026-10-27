@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SolarParams, RoiResults } from '../types';
-import { formatCurrency } from '../utils';
+import { formatCurrency, SOLAR_YIELD_KWH_PER_KW, GRID_CO2_TONS_PER_KWH, HOME_ELECTRIC_CO2_TONS } from '../utils';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface EquationsProps {
@@ -169,7 +169,7 @@ export function Equations({
 
       <EquationBlock title="Yearly Generation" sectionKey="yearlygen">
         <span className="text-slate-500">YearlyGeneration = </span>
-        <Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × 1500 kWh/kW {params.hasSolarEfficiency ? <>× <Var name="SolarEfficiency" sld="slider-solarEfficiency" sec="efficiency" /></> : ''}<br/>
+        <Var name="SystemSizekW" sld="slider-totalSystemSizeKw" sec="system" /> × {SOLAR_YIELD_KWH_PER_KW.toLocaleString()} kWh/kW {params.hasSolarEfficiency ? <>× <Var name="SolarEfficiency" sld="slider-solarEfficiency" sec="efficiency" /></> : ''}<br/>
         <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.systemSizeKW.toFixed(1)} kW × 1,500 {params.hasSolarEfficiency ? `× ${params.efficiencyMode === 'monthly' ? 'monthly profile' : `${params.solarEfficiency}%`}` : ''}<br/>
           = {results.annualGeneration.toLocaleString('en-US', {maximumFractionDigits: 0})} kWh/year
@@ -289,7 +289,7 @@ export function Equations({
         <span className="text-slate-500">KWhSaved = </span>
         (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> × <Var name="GridRenewable%" sld="slider-gridRenewablePercentage" sec="energy" />)) - (<Var name="AnnualUsage" sld="slider-monthlyUsageKwh" sec="energy" /> - NewRenewableKwh)<br/>
         <span className="text-slate-500">CO2TonsSaved = </span>
-        KWhSaved × 0.00043 (tons/kWh)<br/>
+        KWhSaved × {GRID_CO2_TONS_PER_KWH} (tons/kWh, Florida grid)<br/>
         <span className="text-emerald-400 mt-3 block text-[15px]">
           = {results.co2Impact?.co2SavedTonsPerYear.toFixed(2)} tons avoided per year
         </span>
@@ -297,9 +297,9 @@ export function Equations({
 
       <EquationBlock title="CO2 Impact (Equivalent Homes)" sectionKey="co2homes">
         <span className="text-slate-500">EquivalentHomes = </span>
-        <Var name="CO2TonsSaved" eq="co2" /> / 4.515<br/>
+        <Var name="CO2TonsSaved" eq="co2" /> / {HOME_ELECTRIC_CO2_TONS} (tons per home)<br/>
         <span className="text-emerald-400 mt-3 block text-[15px]">
-          = {(results.co2Impact?.co2SavedTonsPerYear / 4.515).toFixed(1)} homes per year
+          = {(results.co2Impact?.co2SavedTonsPerYear / HOME_ELECTRIC_CO2_TONS).toFixed(1)} homes per year
         </span>
       </EquationBlock>
 

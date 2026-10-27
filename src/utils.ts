@@ -1,5 +1,13 @@
 import { SolarParams, RoiResults, YearlyData, SensitivityData, SensitivityVariable, MonthEnergyData } from './types';
 
+// Model constants. Sources for these and the input defaults: src/paramInfo.ts.
+// Yearly output per kW of panels for a south-facing roof array around Tampa Bay (NREL PVWatts range 1,400-1,500).
+export const SOLAR_YIELD_KWH_PER_KW = 1500;
+// Florida grid CO2 rate, EPA eGRID2023: 805.8 lb/MWh = 0.000366 metric tons per kWh.
+export const GRID_CO2_TONS_PER_KWH = 0.000366;
+// CO2 from one average US home's electricity use per year, EPA Greenhouse Gas Equivalencies (2025 revision).
+export const HOME_ELECTRIC_CO2_TONS = 4.798;
+
 export function getActiveEnergyParams(params: SolarParams) {
   let rate = params.utilityRate;
   let flatUsage = params.monthlyUsageKwh;
@@ -115,7 +123,7 @@ export function calculateRoi(params: SolarParams): RoiResults {
   const netCost = Math.max(0, grossCost - totalIncentives);
 
   // 3. Yearly Generation & Monthly Profiles
-  const baseAnnualGeneration = systemSizeKW * 1500; // Assuming 1500 kWh per kW per year
+  const baseAnnualGeneration = systemSizeKW * SOLAR_YIELD_KWH_PER_KW;
   const monthlyGenProfile = params.useSeasonalGenerationCurve ? 
     [0.06, 0.07, 0.09, 0.10, 0.11, 0.11, 0.11, 0.10, 0.09, 0.07, 0.05, 0.04] :
     Array(12).fill(1/12);
@@ -441,7 +449,7 @@ export function calculateRoi(params: SolarParams): RoiResults {
   const oldNonRenewableKwh = annualUsage - currentRenewableKwh;
   const newNonRenewableKwh = annualUsage - newRenewableKwh;
   const kwhSaved = Math.max(0, oldNonRenewableKwh - newNonRenewableKwh);
-  const co2SavedTonsPerYear = kwhSaved * 0.00043; // ~0.43 metric tons per MWh
+  const co2SavedTonsPerYear = kwhSaved * GRID_CO2_TONS_PER_KWH;
 
   return {
     systemCost: grossCost,

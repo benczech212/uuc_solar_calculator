@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, X } from 'lucide-react';
 import { Stat, cn } from './ui';
 import { RoiResults } from '../types';
-import { formatCurrency } from '../utils';
+import { formatCurrency, HOME_ELECTRIC_CO2_TONS } from '../utils';
 
 interface ResultsSummaryProps {
   results: RoiResults;
@@ -88,7 +88,7 @@ export function ResultsSummary({ results, compare, compareLabel, onClearCompare,
           <Stat label="Renewable share" value={`${results.co2Impact.newRenewablePercent.toFixed(0)}%`} tone="good"
             sub={`was ${results.co2Impact.currentRenewablePercent.toFixed(0)}%`} onClick={(e) => onExplain('co2', e)} />
           <Stat label="CO₂ avoided per year" value={`${results.co2Impact.co2SavedTonsPerYear.toFixed(1)} tons`} tone="sky"
-            sub={`like ${(results.co2Impact.co2SavedTonsPerYear / 4.515).toFixed(1)} homes' yearly emissions`} onClick={(e) => onExplain('co2homes', e)} />
+            sub={`like ${(results.co2Impact.co2SavedTonsPerYear / HOME_ELECTRIC_CO2_TONS).toFixed(1)} homes' electricity`} onClick={(e) => onExplain('co2homes', e)} />
         </div>
       </details>
     </div>
